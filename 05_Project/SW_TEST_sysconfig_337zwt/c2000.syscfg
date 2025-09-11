@@ -1,0 +1,713 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --device "F2837xD" --part "F2837xD_337ZWT" --package "F2837xD_337ZWT" --context "CPU1" --product "C2000WARE@6.00.00.00"
+ * @v2CliArgs --device "TMS320F28379D" --package "337ZWT" --context "CPU1" --product "C2000WARE@6.00.00.00"
+ * @versions {"tool":"1.25.0+4268"}
+ */
+
+/**
+ * Import the modules used in this configuration.
+ */
+const adc            = scripting.addModule("/driverlib/adc.js", {}, false);
+const adc1           = adc.addInstance();
+const adc2           = adc.addInstance();
+const adc3           = adc.addInstance();
+const adc4           = adc.addInstance();
+const led            = scripting.addModule("/driverlib/board_components/led", {}, false);
+const led1           = led.addInstance();
+const led2           = led.addInstance();
+const led3           = led.addInstance();
+const led4           = led.addInstance();
+const cputimer       = scripting.addModule("/driverlib/cputimer.js", {}, false);
+const cputimer1      = cputimer.addInstance();
+const cputimer2      = cputimer.addInstance();
+const device_support = scripting.addModule("/driverlib/device_support.js");
+const dma            = scripting.addModule("/driverlib/dma.js", {}, false);
+const dma1           = dma.addInstance();
+const gpio           = scripting.addModule("/driverlib/gpio.js", {}, false);
+const gpio5          = gpio.addInstance();
+const gpio6          = gpio.addInstance();
+const gpio7          = gpio.addInstance();
+const gpio8          = gpio.addInstance();
+const gpio9          = gpio.addInstance();
+const gpio10         = gpio.addInstance();
+const gpio11         = gpio.addInstance();
+const gpio12         = gpio.addInstance();
+const gpio13         = gpio.addInstance();
+const gpio14         = gpio.addInstance();
+const gpio15         = gpio.addInstance();
+const gpio16         = gpio.addInstance();
+const gpio17         = gpio.addInstance();
+const gpio18         = gpio.addInstance();
+const gpio19         = gpio.addInstance();
+const gpio20         = gpio.addInstance();
+const gpio21         = gpio.addInstance();
+const gpio22         = gpio.addInstance();
+const gpio23         = gpio.addInstance();
+const gpio24         = gpio.addInstance();
+const gpio25         = gpio.addInstance();
+const gpio26         = gpio.addInstance();
+const gpio27         = gpio.addInstance();
+const gpio28         = gpio.addInstance();
+const gpio29         = gpio.addInstance();
+const gpio30         = gpio.addInstance();
+const gpio31         = gpio.addInstance();
+const gpio32         = gpio.addInstance();
+const gpio33         = gpio.addInstance();
+const gpio34         = gpio.addInstance();
+const gpio35         = gpio.addInstance();
+const gpio36         = gpio.addInstance();
+const gpio37         = gpio.addInstance();
+const gpio38         = gpio.addInstance();
+const gpio39         = gpio.addInstance();
+const gpio40         = gpio.addInstance();
+const gpio41         = gpio.addInstance();
+const gpio42         = gpio.addInstance();
+const gpio43         = gpio.addInstance();
+const gpio44         = gpio.addInstance();
+const gpio45         = gpio.addInstance();
+const gpio46         = gpio.addInstance();
+const gpio47         = gpio.addInstance();
+const gpio48         = gpio.addInstance();
+const gpio49         = gpio.addInstance();
+const gpio50         = gpio.addInstance();
+const gpio51         = gpio.addInstance();
+const gpio52         = gpio.addInstance();
+const gpio53         = gpio.addInstance();
+const gpio54         = gpio.addInstance();
+const gpio55         = gpio.addInstance();
+const gpio56         = gpio.addInstance();
+const gpio57         = gpio.addInstance();
+const gpio58         = gpio.addInstance();
+const gpio59         = gpio.addInstance();
+const gpio60         = gpio.addInstance();
+const gpio61         = gpio.addInstance();
+const gpio62         = gpio.addInstance();
+const gpio63         = gpio.addInstance();
+const gpio64         = gpio.addInstance();
+const gpio65         = gpio.addInstance();
+const gpio66         = gpio.addInstance();
+const gpio67         = gpio.addInstance();
+const gpio68         = gpio.addInstance();
+const gpio69         = gpio.addInstance();
+const gpio70         = gpio.addInstance();
+const gpio71         = gpio.addInstance();
+const gpio72         = gpio.addInstance();
+const gpio73         = gpio.addInstance();
+const gpio74         = gpio.addInstance();
+const gpio75         = gpio.addInstance();
+const gpio76         = gpio.addInstance();
+const gpio77         = gpio.addInstance();
+const gpio78         = gpio.addInstance();
+const gpio79         = gpio.addInstance();
+const gpio80         = gpio.addInstance();
+const gpio81         = gpio.addInstance();
+const gpio82         = gpio.addInstance();
+const gpio83         = gpio.addInstance();
+const gpio84         = gpio.addInstance();
+const gpio85         = gpio.addInstance();
+const gpio86         = gpio.addInstance();
+const gpio87         = gpio.addInstance();
+const gpio88         = gpio.addInstance();
+const gpio89         = gpio.addInstance();
+const gpio90         = gpio.addInstance();
+const gpio91         = gpio.addInstance();
+const gpio92         = gpio.addInstance();
+const gpio93         = gpio.addInstance();
+const gpio94         = gpio.addInstance();
+const gpio95         = gpio.addInstance();
+const gpio96         = gpio.addInstance();
+const gpio97         = gpio.addInstance();
+const gpio98         = gpio.addInstance();
+const gpio99         = gpio.addInstance();
+const gpio100        = gpio.addInstance();
+const gpio101        = gpio.addInstance();
+const gpio102        = gpio.addInstance();
+const gpio103        = gpio.addInstance();
+const gpio104        = gpio.addInstance();
+const sci            = scripting.addModule("/driverlib/sci.js", {}, false);
+const sci1           = sci.addInstance();
+const sysctl         = scripting.addModule("/driverlib/sysctl.js");
+
+/**
+ * Write custom configuration values to the imported modules.
+ */
+adc1.adcClockPrescaler   = "ADC_CLK_DIV_4_0";
+adc1.$name               = "ADCA_inst";
+adc1.soc0SampleWindow    = 500;
+adc1.enabledSOCs         = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5"];
+adc1.soc1copyFrom        = "SOC0";
+adc1.soc1SampleWindow    = 500;
+adc1.soc2copyFrom        = "SOC1";
+adc1.soc2SampleWindow    = 500;
+adc1.soc3copyFrom        = "SOC0";
+adc1.soc3SampleWindow    = 500;
+adc1.soc4copyFrom        = "SOC1";
+adc1.soc4SampleWindow    = 500;
+adc1.soc5copyFrom        = "SOC1";
+adc1.soc5SampleWindow    = 500;
+adc1.soc1Channel         = "ADC_CH_ADCIN1";
+adc1.soc2Channel         = "ADC_CH_ADCIN2";
+adc1.soc3Channel         = "ADC_CH_ADCIN3";
+adc1.soc4Channel         = "ADC_CH_ADCIN4";
+adc1.soc5Channel         = "ADC_CH_ADCIN5";
+adc1.socHighPriorityMode = "ADC_PRI_ALL_HIPRI";
+adc1.burstSize           = 5;
+adc1.interruptPulseMode  = "ADC_PULSE_END_OF_CONV";
+adc1.useInterrupts       = false;
+adc1.enableBurstMode     = true;
+adc1.enabledInts         = ["ADC_INT_NUMBER1","ADC_INT_NUMBER2"];
+
+adc2.adcBase            = "ADCB_BASE";
+adc2.$name              = "ADCB_inst";
+adc2.adcClockPrescaler  = "ADC_CLK_DIV_4_0";
+adc2.enabledSOCs        = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5"];
+adc2.soc0SampleWindow   = 500;
+adc2.soc1Channel        = "ADC_CH_ADCIN1";
+adc2.soc1SampleWindow   = 500;
+adc2.soc3Channel        = "ADC_CH_ADCIN3";
+adc2.soc3SampleWindow   = 500;
+adc2.soc2Channel        = "ADC_CH_ADCIN2";
+adc2.soc2SampleWindow   = 500;
+adc2.soc4Channel        = "ADC_CH_ADCIN4";
+adc2.soc4SampleWindow   = 500;
+adc2.soc5Channel        = "ADC_CH_ADCIN5";
+adc2.soc5SampleWindow   = 500;
+adc2.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc2.burstSize          = 5;
+adc2.useInterrupts      = false;
+adc2.enableBurstMode    = true;
+adc2.enabledInts        = ["ADC_INT_NUMBER1","ADC_INT_NUMBER2"];
+
+adc3.adcBase            = "ADCC_BASE";
+adc3.$name              = "ADCC_inst";
+adc3.adcClockPrescaler  = "ADC_CLK_DIV_4_0";
+adc3.soc2SampleWindow   = 500;
+adc3.soc2Channel        = "ADC_CH_ADCIN2";
+adc3.soc3SampleWindow   = 500;
+adc3.soc3Channel        = "ADC_CH_ADCIN3";
+adc3.soc4Channel        = "ADC_CH_ADCIN4";
+adc3.soc4SampleWindow   = 500;
+adc3.soc5Channel        = "ADC_CH_ADCIN5";
+adc3.soc5SampleWindow   = 500;
+adc3.soc14SampleWindow  = 500;
+adc3.soc14Channel       = "ADC_CH_ADCIN14";
+adc3.soc15SampleWindow  = 500;
+adc3.soc15Channel       = "ADC_CH_ADCIN15";
+adc3.enabledSOCs        = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5"];
+adc3.soc0Channel        = "ADC_CH_ADCIN14";
+adc3.soc0SampleWindow   = 500;
+adc3.soc1SampleWindow   = 500;
+adc3.soc1Channel        = "ADC_CH_ADCIN15";
+adc3.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc3.burstSize          = 5;
+adc3.useInterrupts      = false;
+adc3.enableBurstMode    = true;
+adc3.enabledInts        = ["ADC_INT_NUMBER1","ADC_INT_NUMBER2"];
+
+adc4.adcClockPrescaler  = "ADC_CLK_DIV_4_0";
+adc4.enabledSOCs        = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2","ADC_SOC_NUMBER3","ADC_SOC_NUMBER4","ADC_SOC_NUMBER5"];
+adc4.soc0SampleWindow   = 500;
+adc4.soc1Channel        = "ADC_CH_ADCIN1";
+adc4.soc1SampleWindow   = 500;
+adc4.soc3Channel        = "ADC_CH_ADCIN3";
+adc4.soc3SampleWindow   = 500;
+adc4.soc2Channel        = "ADC_CH_ADCIN2";
+adc4.soc2SampleWindow   = 500;
+adc4.soc4Channel        = "ADC_CH_ADCIN4";
+adc4.soc4SampleWindow   = 500;
+adc4.soc5Channel        = "ADC_CH_ADCIN5";
+adc4.soc5SampleWindow   = 500;
+adc4.adcBase            = "ADCD_BASE";
+adc4.$name              = "ADCD_inst";
+adc4.burstSize          = 5;
+adc4.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+adc4.enableBurstMode    = true;
+adc4.enabledInts        = ["ADC_INT_NUMBER1","ADC_INT_NUMBER2"];
+
+led1.$name                  = "LED1";
+led1.gpio.writeInitialValue = true;
+led1.gpio.gpioPin.$assign   = "GPIO18";
+
+led2.$name                  = "LED2";
+led2.gpio.writeInitialValue = true;
+led2.gpio.gpioPin.$assign   = "GPIO17";
+
+led3.$name                  = "LED3";
+led3.gpio.writeInitialValue = true;
+led3.gpio.gpioPin.$assign   = "GPIO16";
+
+led4.$name                  = "LED4";
+led4.gpio.writeInitialValue = true;
+led4.gpio.gpioPin.$assign   = "GPIO19";
+
+const divider3 = system.clockTree["EPWMCLKDIV"];
+scripting.suppress("ePWM TZFRC and TZCLR events will sometimes be missed when EPWMCLKDIV is divide by 2\\. Always program EPWMCLKDIV to divide by 1 if using TZFRC or TZCLR register\\. Please refer to the F2837xD Silicon Errata for more details\\.", divider3, "EPWMCLK");
+
+const multiplier4         = system.clockTree["PLL_IMULT"];
+multiplier4.multiplyValue = 20;
+
+const pinFunction3     = system.clockTree["XTAL"];
+pinFunction3.XTAL_Freq = 20;
+
+cputimer1.$name                    = "CPUTIMER0_inst";
+cputimer1.registerInterrupts       = true;
+cputimer1.startTimer               = true;
+cputimer1.enableInterrupt          = true;
+cputimer1.timerPrescaler           = 200;
+cputimer1.timerPeriod              = 50;
+cputimer1.timerInt.enableInterrupt = true;
+
+cputimer2.$name          = "CPUTIMER1_inst";
+cputimer2.cputimerBase   = "CPUTIMER1_BASE";
+cputimer2.startTimer     = true;
+cputimer2.emulationMode  = "CPUTIMER_EMULATIONMODE_RUNFREE";
+cputimer2.timerPeriod    = 65535;
+cputimer2.timerPrescaler = 100;
+
+const default_warning = scripting.addModule("/driverlib/default_warning.js", {}, false);
+scripting.suppress("Add the \'Device Support\' module in order to use Clock Tree tool and generate device support files\\. This suggestion can be ignored if not using the Clock Tree tool\\.", default_warning);
+
+dma1.$name                  = "DMA0_inst";
+dma1.useInterrupts          = true;
+dma1.registerInterrupts     = true;
+dma1.enableInterrupts       = true;
+dma1.enableOverrunInterrupt = true;
+dma1.interruptMode          = "DMA_INT_AT_END";
+dma1.continuousModeConfig   = "DMA_CFG_CONTINUOUS_ENABLE";
+dma1.enableTriggers         = true;
+dma1.destAddressInputMode   = "VARIABLE";
+dma1.emulationMode          = "DMA_EMULATION_FREE_RUN";
+dma1.destAddressVariable    = "ADCA_ResultBufferPtr";
+dma1.srcAddressInputMode    = "VARIABLE";
+dma1.srcAddressVariable     = "ADCA_ResultRegisterPtr";
+dma1.srcBurstStep           = 2;
+dma1.burstSize              = 6;
+dma1.destBurstStep          = 1;
+dma1.srcTransferStep        = -12;
+dma1.destWrapSize           = 1023;
+dma1.startChannel           = true;
+dma1.triggerSource          = "DMA_TRIGGER_ADCA2";
+dma1.dmaInt.enableInterrupt = true;
+
+gpio5.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio5.$name           = "inst_GPIO2";
+gpio5.gpioPin.$assign = "GPIO2";
+
+gpio6.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio6.$name           = "inst_GPIO3";
+gpio6.gpioPin.$assign = "GPIO3";
+
+gpio7.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio7.$name           = "inst_GPIO4";
+gpio7.gpioPin.$assign = "GPIO4";
+
+gpio8.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio8.$name           = "inst_GPIO5";
+gpio8.gpioPin.$assign = "GPIO5";
+
+gpio9.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio9.$name           = "inst_GPIO6";
+gpio9.gpioPin.$assign = "GPIO6";
+
+gpio10.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio10.$name           = "inst_GPIO7";
+gpio10.gpioPin.$assign = "GPIO7";
+
+gpio11.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio11.$name           = "inst_GPIO8";
+gpio11.gpioPin.$assign = "GPIO8";
+
+gpio12.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio12.$name           = "inst_GPIO9";
+gpio12.gpioPin.$assign = "GPIO9";
+
+gpio13.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio13.$name           = "inst_GPIO11";
+gpio13.gpioPin.$assign = "GPIO11";
+
+gpio14.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio14.$name           = "inst_GPIO12";
+gpio14.gpioPin.$assign = "GPIO12";
+
+gpio15.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio15.$name           = "inst_GPIO13";
+gpio15.gpioPin.$assign = "GPIO13";
+
+gpio16.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio16.$name           = "inst_GPIO14";
+gpio16.gpioPin.$assign = "GPIO14";
+
+gpio17.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio17.$name           = "inst_GPIO15";
+gpio17.gpioPin.$assign = "GPIO15";
+
+gpio18.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio18.$name           = "inst_GPIO10";
+gpio18.gpioPin.$assign = "GPIO10";
+
+gpio19.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio19.$name           = "inst_GPIO20";
+gpio19.gpioPin.$assign = "GPIO20";
+
+gpio20.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio20.$name           = "inst_GPIO21";
+gpio20.gpioPin.$assign = "GPIO21";
+
+gpio21.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio21.$name           = "inst_GPIO22";
+gpio21.gpioPin.$assign = "GPIO22";
+
+gpio22.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio22.$name           = "inst_GPIO23";
+gpio22.gpioPin.$assign = "GPIO23";
+
+gpio23.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio23.$name           = "inst_GPIO24";
+gpio23.gpioPin.$assign = "GPIO24";
+
+gpio24.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio24.$name           = "inst_GPIO25";
+gpio24.gpioPin.$assign = "GPIO25";
+
+gpio25.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio25.$name           = "inst_GPIO26";
+gpio25.gpioPin.$assign = "GPIO26";
+
+gpio26.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio26.$name           = "inst_GPIO27";
+gpio26.gpioPin.$assign = "GPIO27";
+
+gpio27.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio27.$name           = "inst_GPIO30";
+gpio27.gpioPin.$assign = "GPIO30";
+
+gpio28.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio28.$name           = "inst_GPIO32";
+gpio28.gpioPin.$assign = "GPIO32";
+
+gpio29.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio29.$name           = "inst_GPIO33";
+gpio29.gpioPin.$assign = "GPIO33";
+
+gpio30.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio30.$name           = "inst_GPIO36";
+gpio30.gpioPin.$assign = "GPIO36";
+
+gpio31.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio31.$name           = "inst_GPIO43";
+gpio31.gpioPin.$assign = "GPIO43";
+
+gpio32.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio32.$name           = "inst_GPIO53";
+gpio32.gpioPin.$assign = "GPIO53";
+
+gpio33.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio33.$name           = "inst_GPIO54";
+gpio33.gpioPin.$assign = "GPIO54";
+
+gpio34.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio34.$name           = "inst_GPIO55";
+gpio34.gpioPin.$assign = "GPIO55";
+
+gpio35.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio35.$name           = "inst_GPIO56";
+gpio35.gpioPin.$assign = "GPIO56";
+
+gpio36.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio36.$name           = "inst_GPIO57";
+gpio36.gpioPin.$assign = "GPIO57";
+
+gpio37.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio37.$name           = "inst_GPIO62";
+gpio37.gpioPin.$assign = "GPIO62";
+
+gpio38.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio38.$name           = "inst_GPIO63";
+gpio38.gpioPin.$assign = "GPIO63";
+
+gpio39.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio39.$name           = "inst_GPIO64";
+gpio39.gpioPin.$assign = "GPIO64";
+
+gpio40.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio40.$name           = "inst_GPIO65";
+gpio40.gpioPin.$assign = "GPIO65";
+
+gpio41.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio41.$name           = "inst_GPIO66";
+gpio41.gpioPin.$assign = "GPIO66";
+
+gpio42.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio42.$name           = "inst_GPIO84";
+gpio42.gpioPin.$assign = "GPIO84";
+
+gpio43.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio43.$name           = "inst_GPIO93";
+gpio43.gpioPin.$assign = "GPIO93";
+
+gpio44.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio44.$name           = "inst_GPIO94";
+gpio44.gpioPin.$assign = "GPIO94";
+
+gpio45.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio45.$name           = "inst_GPIO95";
+gpio45.gpioPin.$assign = "GPIO95";
+
+gpio46.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio46.$name           = "inst_GPIO96";
+gpio46.gpioPin.$assign = "GPIO96";
+
+gpio47.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio47.$name           = "inst_GPIO97";
+gpio47.gpioPin.$assign = "GPIO97";
+
+gpio48.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio48.$name           = "inst_GPIO98";
+gpio48.gpioPin.$assign = "GPIO98";
+
+gpio49.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio49.$name           = "inst_GPIO99";
+gpio49.gpioPin.$assign = "GPIO99";
+
+gpio50.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio50.$name           = "inst_GPIO100";
+gpio50.gpioPin.$assign = "GPIO100";
+
+gpio51.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio51.$name           = "inst_GPIO101";
+gpio51.gpioPin.$assign = "GPIO101";
+
+gpio52.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio52.$name           = "inst_GPIO102";
+gpio52.gpioPin.$assign = "GPIO102";
+
+gpio53.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio53.$name           = "inst_GPIO103";
+gpio53.gpioPin.$assign = "GPIO103";
+
+gpio54.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio54.$name           = "inst_GPIO104";
+gpio54.gpioPin.$assign = "GPIO104";
+
+gpio55.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio55.$name           = "inst_GPIO105";
+gpio55.gpioPin.$assign = "GPIO105";
+
+gpio56.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio56.$name           = "inst_GPIO108";
+gpio56.gpioPin.$assign = "GPIO108";
+
+gpio57.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio57.$name           = "inst_GPIO110";
+gpio57.gpioPin.$assign = "GPIO110";
+
+gpio58.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio58.$name           = "inst_GPIO111";
+gpio58.gpioPin.$assign = "GPIO111";
+
+gpio59.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio59.$name           = "inst_GPIO119";
+gpio59.gpioPin.$assign = "GPIO119";
+
+gpio60.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio60.$name           = "inst_GPIO125";
+gpio60.gpioPin.$assign = "GPIO125";
+
+gpio61.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio61.$name           = "inst_GPIO126";
+gpio61.gpioPin.$assign = "GPIO126";
+
+gpio62.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio62.$name           = "inst_GPIO127";
+gpio62.gpioPin.$assign = "GPIO127";
+
+gpio63.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio63.$name           = "inst_GPIO128";
+gpio63.gpioPin.$assign = "GPIO128";
+
+gpio64.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio64.$name           = "inst_GPIO129";
+gpio64.gpioPin.$assign = "GPIO129";
+
+gpio65.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio65.$name           = "inst_GPIO130";
+gpio65.gpioPin.$assign = "GPIO130";
+
+gpio66.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio66.$name           = "inst_GPIO131";
+gpio66.gpioPin.$assign = "GPIO131";
+
+gpio67.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio67.$name           = "inst_GPIO132";
+gpio67.gpioPin.$assign = "GPIO132";
+
+gpio68.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio68.$name           = "inst_GPIO133";
+gpio68.gpioPin.$assign = "GPIO133";
+
+gpio69.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio69.$name           = "inst_GPIO134";
+gpio69.gpioPin.$assign = "GPIO134";
+
+gpio70.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio70.$name           = "inst_GPIO135";
+gpio70.gpioPin.$assign = "GPIO135";
+
+gpio71.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio71.$name           = "inst_GPIO136";
+gpio71.gpioPin.$assign = "GPIO136";
+
+gpio72.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio72.$name           = "inst_GPIO137";
+gpio72.gpioPin.$assign = "GPIO137";
+
+gpio73.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio73.$name           = "inst_GPIO138";
+gpio73.gpioPin.$assign = "GPIO138";
+
+gpio74.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio74.$name           = "inst_GPIO139";
+gpio74.gpioPin.$assign = "GPIO139";
+
+gpio75.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio75.$name           = "inst_GPIO140";
+gpio75.gpioPin.$assign = "GPIO140";
+
+gpio76.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio76.$name           = "inst_GPIO141";
+gpio76.gpioPin.$assign = "GPIO141";
+
+gpio77.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio77.$name           = "inst_GPIO142";
+gpio77.gpioPin.$assign = "GPIO142";
+
+gpio78.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio78.$name           = "inst_GPIO143";
+gpio78.gpioPin.$assign = "GPIO143";
+
+gpio79.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio79.$name           = "inst_GPIO144";
+gpio79.gpioPin.$assign = "GPIO144";
+
+gpio80.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio80.$name           = "inst_GPIO145";
+gpio80.gpioPin.$assign = "GPIO145";
+
+gpio81.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio81.$name           = "inst_GPIO146";
+gpio81.gpioPin.$assign = "GPIO146";
+
+gpio82.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio82.$name           = "inst_GPIO147";
+gpio82.gpioPin.$assign = "GPIO147";
+
+gpio83.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio83.$name           = "inst_GPIO148";
+gpio83.gpioPin.$assign = "GPIO148";
+
+gpio84.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio84.$name           = "inst_GPIO149";
+gpio84.gpioPin.$assign = "GPIO149";
+
+gpio85.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio85.$name           = "inst_GPIO150";
+gpio85.gpioPin.$assign = "GPIO150";
+
+gpio86.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio86.$name           = "inst_GPIO151";
+gpio86.gpioPin.$assign = "GPIO151";
+
+gpio87.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio87.$name           = "inst_GPIO152";
+gpio87.gpioPin.$assign = "GPIO152";
+
+gpio88.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio88.$name           = "inst_GPIO153";
+gpio88.gpioPin.$assign = "GPIO153";
+
+gpio89.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio89.$name           = "inst_GPIO154";
+gpio89.gpioPin.$assign = "GPIO154";
+
+gpio90.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio90.$name           = "inst_GPIO155";
+gpio90.gpioPin.$assign = "GPIO155";
+
+gpio91.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio91.$name           = "inst_GPIO156";
+gpio91.gpioPin.$assign = "GPIO156";
+
+gpio92.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio92.$name           = "inst_GPIO157";
+gpio92.gpioPin.$assign = "GPIO157";
+
+gpio93.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio93.$name           = "inst_GPIO158";
+gpio93.gpioPin.$assign = "GPIO158";
+
+gpio94.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio94.$name           = "inst_GPIO159";
+gpio94.gpioPin.$assign = "GPIO159";
+
+gpio95.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio95.$name           = "inst_GPIO160";
+gpio95.gpioPin.$assign = "GPIO160";
+
+gpio96.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio96.$name           = "inst_GPIO161";
+gpio96.gpioPin.$assign = "GPIO161";
+
+gpio97.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio97.$name           = "inst_GPIO162";
+gpio97.gpioPin.$assign = "GPIO162";
+
+gpio98.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio98.$name           = "inst_GPIO163";
+gpio98.gpioPin.$assign = "GPIO163";
+
+gpio99.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio99.$name           = "inst_GPIO164";
+gpio99.gpioPin.$assign = "GPIO164";
+
+gpio100.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio100.$name           = "inst_GPIO165";
+gpio100.gpioPin.$assign = "GPIO165";
+
+gpio101.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio101.$name           = "inst_GPIO166";
+gpio101.gpioPin.$assign = "GPIO166";
+
+gpio102.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio102.$name           = "inst_GPIO167";
+gpio102.gpioPin.$assign = "GPIO167";
+
+gpio103.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio103.$name           = "inst_GPIO168";
+gpio103.gpioPin.$assign = "GPIO168";
+
+gpio104.qualMode        = "GPIO_QUAL_3SAMPLE";
+gpio104.$name           = "inst_GPIO72";
+gpio104.gpioPin.$assign = "GPIO72";
+
+sci1.selectRegisteredInterrupts = ["registerRxInt","registerTxInt"];
+sci1.enabledInterrupts          = ["SCI_INT_RXRDY_BRKDT","SCI_INT_TXRDY"];
+sci1.enabledErrorInterrupts     = ["SCI_INT_FE","SCI_INT_OE","SCI_INT_PE","SCI_INT_RXERR"];
+sci1.$name                      = "SCIA_inst";
+sci1.parity                     = "SCI_CONFIG_PAR_EVEN";
+sci1.enabledFIFOInterrupts      = ["SCI_INT_RXFF","SCI_INT_TXFF"];
+sci1.rxFifo                     = "SCI_FIFO_RX1";
+sci1.sci.$assign                = "SCIA";
+sci1.sci.scirxdPin.$assign      = "GPIO28";
+sci1.sci.scitxdPin.$assign      = "GPIO29";
+sci1.rxQual.$name               = "myGPIOQUAL0";
+sci1.rxQual.qualMode            = "GPIO_QUAL_3SAMPLE";
+sci1.txQual.$name               = "myGPIOQUAL1";
+sci1.txQual.qualMode            = "GPIO_QUAL_3SAMPLE";
+sci1.txQual.padConfig           = "STD";
+sci1.sciRXInt.enableInterrupt   = true;
+sci1.sciTXInt.enableInterrupt   = true;
+
+sysctl.enableNMIGlobalInterrupt = true;
+sysctl.splitCode                = true;
