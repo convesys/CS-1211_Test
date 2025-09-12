@@ -20,19 +20,35 @@
 
 #define RESULTS_BUFFER_SIZE     1024 //buffer size for storing conversion results 1 channel
 
+#define APPL_ADC_RESOLUTION       12
+// 12 for 12-bit conversion resolution, which supports (ADC_MODE_SINGLE_ENDED)
+// Sample on single pin (VREFLO is the low reference)
+// Or 16 for 16-bit conversion resolution, which supports (ADC_MODE_DIFFERENTIAL)
+// Sample on pair of pins (difference between pins is converted, subject to
+// common mode voltage requirements; see the device data manual)
+
+
 
 //
 // Variables
 //
 
+uint16_t bManualMeasureConfigure = 1;
+uint16_t bManualMeasureRequest = 0;
+uint16_t bManualMeasureStop = 0;
+
 uint16_t ui16_tmr0_cntr;
 uint16_t ui16_snd_cntr, ui16_snd_cntrp;
 uint16_t ui16_dma0_cntr;
 
-uint16_t ADCA_ResultBuffer[RESULTS_BUFFER_SIZE * 6];
-uint16_t ADCB_ResultBuffer[RESULTS_BUFFER_SIZE * 6];
-uint16_t ADCC_ResultBuffer[RESULTS_BUFFER_SIZE * 6];
-uint16_t ADCD_ResultBuffer[RESULTS_BUFFER_SIZE * 6];
+#pragma DATA_SECTION(ADCA_ResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCB_ResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCC_ResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCD_ResultBuffer, "ramgs0_15");
+uint16_t ADCA_ResultBuffer[RESULTS_BUFFER_SIZE + 16];   //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data from index 1 - read 16 more values to compensate
+uint16_t ADCB_ResultBuffer[RESULTS_BUFFER_SIZE + 16];   //value index 0 could be stale read by dma when ADC prescale Ratio > 2
+uint16_t ADCC_ResultBuffer[RESULTS_BUFFER_SIZE + 16];   //value index 0 could be stale read by dma when ADC prescale Ratio > 2
+uint16_t ADCD_ResultBuffer[RESULTS_BUFFER_SIZE + 16];   //value index 0 could be stale read by dma when ADC prescale Ratio > 2
 
 const void * ADCA_ResultBufferPtr = ADCA_ResultBuffer;
 const void * ADCB_ResultBufferPtr = ADCB_ResultBuffer;
@@ -44,6 +60,18 @@ const void * ADCB_ResultRegisterPtr = (const void *)ADCBRESULT_BASE;
 const void * ADCC_ResultRegisterPtr = (const void *)ADCCRESULT_BASE;
 const void * ADCD_ResultRegisterPtr = (const void *)ADCDRESULT_BASE;
 
+uint16_t ADCA_InterruptCount[4];
+uint16_t ADCB_InterruptCount[4];
+uint16_t ADCC_InterruptCount[4];
+uint16_t ADCD_InterruptCount[4];
+
+/* timer resolution set to 0.5 us */
+uint16_t timer_start_adc = 0;
+uint16_t timer_final_adc = 0;
+uint16_t timer_final_dma = 0;
+uint16_t timer_count_adc = 0;
+uint16_t timer_count_dma = 0;
+uint16_t timer_count_adc_dma = 0;
 
 //
 // Function Prototypes
@@ -51,17 +79,260 @@ const void * ADCD_ResultRegisterPtr = (const void *)ADCDRESULT_BASE;
 void APPL_ADC_Start(void);
 void APPL_ADC_Fill(void);
 
+void APPL_ADC_MeasureStart(void);
+void APPL_ADC_MeasureStop(void);
+void APPL_DMA_ADCA(void);
+
 
 //
 // Interrupt Functions
 //
 
+//
+// dmach1ISR - This is called at the end of the DMA transfer, the conversions
+//              are stopped by removing the trigger of the first SOC from
+//              the last.
+//
 __interrupt void INT_DMA0_inst_ISR(void)
 {
     ui16_dma0_cntr++;
+    //
+    // Stop the ADC by removing the trigger for SOC0
+    //
+    ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
+    timer_final_dma = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+    timer_count_dma = timer_start_adc - timer_final_dma;
+    timer_count_adc_dma = timer_count_adc;
+    //APPL_ADC_MeasureStop();
+
     Interrupt_clearACKGroup(INT_DMA0_inst_INTERRUPT_ACK_GROUP);
 }
 
+__interrupt void INT_ADCA_inst_1_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCA1);
+    ADCA_InterruptCount[0]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+__interrupt void INT_ADCA_inst_2_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCA2);
+    ADCA_InterruptCount[1]++;
+    timer_final_adc = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+    timer_count_adc = timer_start_adc - timer_final_adc;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCA_inst_3_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCA3);
+    ADCA_InterruptCount[2]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCA_inst_4_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCA4);
+    ADCA_InterruptCount[3]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCB_inst_1_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCB1);
+    ADCB_InterruptCount[0]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+__interrupt void INT_ADCB_inst_2_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCB2);
+    ADCB_InterruptCount[1]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCB_inst_3_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCB3);
+    ADCB_InterruptCount[2]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCB_inst_4_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCB4);
+    ADCB_InterruptCount[3]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCC_inst_1_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCC1);
+    ADCC_InterruptCount[0]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+__interrupt void INT_ADCC_inst_2_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCC2);
+    ADCC_InterruptCount[1]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCC_inst_3_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCC3);
+    ADCC_InterruptCount[2]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCC_inst_4_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCC4);
+    ADCC_InterruptCount[3]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCD_inst_1_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCD1);
+    ADCD_InterruptCount[0]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
+}
+
+__interrupt void INT_ADCD_inst_2_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCD2);
+    ADCD_InterruptCount[1]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCD_inst_3_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCD3);
+    ADCD_InterruptCount[2]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
+
+__interrupt void INT_ADCD_inst_4_ISR(void)
+{
+    //
+    // Disable this interrupt from happening again
+    //
+    //Interrupt_disable(INT_ADCD4);
+    ADCD_InterruptCount[3]++;
+
+    //
+    // Acknowledge interrupt
+    //
+    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP10);
+}
 
 
 __interrupt void INT_CPUTIMER0_inst_ISR(void)
@@ -70,8 +341,10 @@ __interrupt void INT_CPUTIMER0_inst_ISR(void)
     if(20000 <= ++ui16_tmr0_cntr){
         ui16_tmr0_cntr = 0;
 
-        APPL_ADC_Fill();
-        APPL_ADC_Start();
+        //APPL_ADC_Fill();
+        //APPL_ADC_Start();
+
+        //APPL_ADC_MeasureStart();
 
         ui16_snd_cntr++;
     } else {
@@ -344,6 +617,200 @@ void APPL_ADC_Fill(void)
     inp_reg_mem[55] = ADC_readResult(ADCDRESULT_BASE, ADC_SOC_NUMBER5);
 }
 
+
+
+//
+// setupADCContinuous - setup the ADC to continuously convert on one channel
+//
+void setupADCContinuous(uint32_t adcBase, uint16_t channel)
+{
+    uint16_t acqps;
+
+    //
+    // Determine minimum acquisition window (in SYSCLKS) based on resolution
+    //
+    if(APPL_ADC_RESOLUTION == 12)
+    {
+        acqps = 14; // 75ns sampling time
+                    // 44 cycles conversion time
+    }
+    else //resolution is 16-bit
+    {
+        acqps = 63; // 320ns
+    }
+    //
+    // - NOTE: A longer sampling window will be required if the ADC driving
+    //   source is less than ideal (an ideal source would be a high bandwidth
+    //   op-amp with a small series resistance). See TI application report
+    //   SPRACT6 for guidance on ADC driver design.
+    //
+
+    //
+    // Configure SOCs channel no. & acquisition window.
+    // Trigger SCO0 from SW.
+    // Trigger all other SOCs from INT1 (EOC on SOC0).
+    //
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER0, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER1, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER2, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER3, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER4, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER5, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER6, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER7, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER8, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER9, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER10, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER11, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER12, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER13, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER14, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+    ADC_setupSOC(adcBase, ADC_SOC_NUMBER15, ADC_TRIGGER_SW_ONLY,
+                 (ADC_Channel)channel, acqps);
+
+    //
+    // Enable continuous operation by setting the last SOC to re-trigger
+    // the first
+    //
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER0,    // ADCA
+                               ADC_INT_SOC_TRIGGER_ADCINT2);
+    //
+    // Configure ADCINT1 trigger for SOC1-SOC15
+    //
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER1,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER2,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER3,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER4,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER5,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER6,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER7,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER8,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER9,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER10,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER11,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER12,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER13,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER14,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER15,
+                               ADC_INT_SOC_TRIGGER_ADCINT1);
+
+    //
+    // Enable ADCINT1 & ADCINT2. Disable ADCINT3 & ADCINT4.
+    //
+    ADC_enableInterrupt(adcBase, ADC_INT_NUMBER1);
+    ADC_enableInterrupt(adcBase, ADC_INT_NUMBER2);
+    ADC_disableInterrupt(adcBase, ADC_INT_NUMBER3);
+    ADC_disableInterrupt(adcBase, ADC_INT_NUMBER4);
+
+    //
+    // Enable continuous mode
+    //
+    ADC_enableContinuousMode(adcBase, ADC_INT_NUMBER1);
+    ADC_enableContinuousMode(adcBase, ADC_INT_NUMBER2);
+
+    //
+    // Configure interrupt triggers
+    //
+    ADC_setInterruptSource(adcBase, ADC_INT_NUMBER1, ADC_SOC_NUMBER0);
+    ADC_setInterruptSource(adcBase, ADC_INT_NUMBER2, ADC_SOC_NUMBER15);
+
+}
+
+
+void APPL_ADC_MeasureStart(void)
+{
+
+
+    setupADCContinuous(ADCA_BASE, ADC_CH_ADCIN0);
+    APPL_DMA_ADCA();
+    ADC_forceMultipleSOC(ADCA_BASE, ADC_FORCE_SOC0);
+
+}
+
+
+void APPL_ADC_MeasureStop(void)
+{
+    DMA_stopChannel(DMA_CH1_BASE);
+    DMA_disableTrigger(DMA_CH1_BASE);
+    DMA_disableOverrunInterrupt(DMA_CH1_BASE);
+    DMA_disableInterrupt(DMA_CH1_BASE);
+
+    //
+    // Enable continuous mode
+    //
+    ADC_disableContinuousMode(ADCA_BASE, ADC_INT_NUMBER1);
+    ADC_disableContinuousMode(ADCA_BASE, ADC_INT_NUMBER2);
+
+    //
+    // Enable ADCINT1 & ADCINT2. Disable ADCINT3 & ADCINT4.
+    //
+    ADC_disableInterrupt(ADCA_BASE, ADC_INT_NUMBER1);
+    ADC_disableInterrupt(ADCA_BASE, ADC_INT_NUMBER2);
+    ADC_disableInterrupt(ADCA_BASE, ADC_INT_NUMBER3);
+    ADC_disableInterrupt(ADCA_BASE, ADC_INT_NUMBER4);
+
+}
+
+void APPL_DMA_ADCA(void)
+{
+    //
+    // Clearing all pending interrupt flags
+    //
+    DMA_clearTriggerFlag(DMA_CH1_BASE);   // DMA channel 1
+    HWREGH(ADCA_BASE + ADC_O_INTFLGCLR) = 0x3U; // ADCA
+
+    //
+    // DMA channel 1 set up for ADCA
+    //
+    DMA_configAddresses(DMA_CH1_BASE, ADCA_ResultBufferPtr, ADCA_ResultRegisterPtr);
+
+    //
+    // Perform enough 16-word bursts to fill the results buffer. Data will be
+    // transferred 32 bits at a time hence the address steps below.
+    //
+    DMA_configBurst(DMA_CH1_BASE, 16, 2, 2);
+    DMA_configTransfer(DMA_CH1_BASE, (RESULTS_BUFFER_SIZE >> 4), -14, 2);
+    DMA_configMode(DMA_CH1_BASE, DMA_TRIGGER_ADCA2,
+                   (DMA_CFG_ONESHOT_DISABLE | DMA_CFG_CONTINUOUS_DISABLE |
+                    DMA_CFG_SIZE_32BIT));
+
+    DMA_enableTrigger(DMA_CH1_BASE);
+    DMA_disableOverrunInterrupt(DMA_CH1_BASE);
+    DMA_setInterruptMode(DMA_CH1_BASE, DMA_INT_AT_END);
+    DMA_enableInterrupt(DMA_CH1_BASE);
+
+}
+
+
 void APPL_main(void)
 {
 //    if(ui16_snd_cntr != ui16_snd_cntrp){
@@ -366,6 +833,27 @@ void APPL_main(void)
 //    if(timer_final >= timer_start) inp_reg_mem[100] = timer_final - timer_start;
 //    else inp_reg_mem[100] = timer_final +(65535 - timer_start) + 1;
     MB_Main();
+
+    if (bManualMeasureConfigure)
+    {
+        setupADCContinuous(ADCA_BASE, ADC_CH_ADCIN0);
+        bManualMeasureConfigure = 0;
+    }
+    if (bManualMeasureRequest)
+    {
+        //re-enable trigger ADC_SOC_NUMBER0 with ADCINT2 for continuous adc mode
+        ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+        ADC_forceSOC(ADCA_BASE, ADC_SOC_NUMBER0);
+        timer_start_adc = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+        bManualMeasureRequest = 0;
+    }
+    if (bManualMeasureStop)
+    {
+        ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
+        bManualMeasureStop = 0;
+    }
+
+
 }
 
 //

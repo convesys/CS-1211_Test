@@ -10,11 +10,11 @@ PAGE 0 :  /* Program Memory */
    RAMD0           	: origin = 0x00B000, length = 0x000800
    RAMLS0          	: origin = 0x008000, length = 0x000800
    RAMLS1          	: origin = 0x008800, length = 0x000800
-   RAMLS2      		: origin = 0x009000, length = 0x000800
-   RAMLS3      		: origin = 0x009800, length = 0x000800
-   RAMLS4      		: origin = 0x00A000, length = 0x000800
-   RAMGS14          : origin = 0x01A000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
-   RAMGS15          : origin = 0x01B000, length = 0x000FF8     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
+//   RAMLS2      		: origin = 0x009000, length = 0x000800
+//   RAMLS3      		: origin = 0x009800, length = 0x000800
+//   RAMLS4      		: origin = 0x00A000, length = 0x000800
+//   RAMGS14          : origin = 0x01A000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
+//   RAMGS15          : origin = 0x01B000, length = 0x000FF8     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
 
 //   RAMGS15_RSVD     : origin = 0x01BFF8, length = 0x000008    /* Reserve and do not use for code as per the errata advisory "Memory: Prefetching Beyond Valid Memory" */
 
@@ -47,12 +47,17 @@ PAGE 1 : /* Data Memory */
 //   RAMM1_RSVD      : origin = 0x0007F8, length = 0x000008     /* Reserve and do not use for code as per the errata advisory "Memory: Prefetching Beyond Valid Memory" */
    RAMD1           : origin = 0x00B800, length = 0x000800
 
-   RAMLS5      : origin = 0x00A800, length = 0x000800
+//   RAMLS2      		: origin = 0x009000, length = 0x000800
+//   RAMLS3      		: origin = 0x009800, length = 0x000800
+//   RAMLS4      		: origin = 0x00A000, length = 0x000800
+//   RAMLS5      : origin = 0x00A800, length = 0x000800
+	RAMLS2_5	: origin = 0x009000, length = 0x002000
 
-   RAMGS0      : origin = 0x00C000, length = 0x001000
-   RAMGS1      : origin = 0x00D000, length = 0x001000
-   RAMGS2      : origin = 0x00E000, length = 0x001000
-   RAMGS3      : origin = 0x00F000, length = 0x001000
+
+   //RAMGS0      : origin = 0x00C000, length = 0x001000
+   //RAMGS1      : origin = 0x00D000, length = 0x001000
+   //RAMGS2      : origin = 0x00E000, length = 0x001000
+   //RAMGS3      : origin = 0x00F000, length = 0x001000
    //RAMGS4      : origin = 0x010000, length = 0x001000
    //RAMGS5      : origin = 0x011000, length = 0x001000
    //RAMGS6      : origin = 0x012000, length = 0x001000
@@ -68,9 +73,11 @@ PAGE 1 : /* Data Memory */
    //RAMGS11     : origin = 0x017000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
    //RAMGS12     : origin = 0x018000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
    //RAMGS13     : origin = 0x019000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
+   //RAMGS14          : origin = 0x01A000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
+   //RAMGS15          : origin = 0x01B000, length = 0x001000     /* Only Available on F28379D, F28377D, F28375D devices. Remove line on other devices. */
 
 
-   RAMGS4_13	: origin = 0x010000, length = 0x00A000
+   RAMGS0_15	: origin = 0x010000, length = 0x010000
 
    CPU2TOCPU1RAM   : origin = 0x03F800, length = 0x000400
    CPU1TOCPU2RAM   : origin = 0x03FC00, length = 0x000400
@@ -89,29 +96,30 @@ SECTIONS
 
 #if defined(__TI_EABI__)
    .init_array         : > FLASHB,       PAGE = 0,       ALIGN(8)
-   .bss                : > RAMGS4_13,       PAGE = 1
-   .bss:output         : > RAMLS3,       PAGE = 0
-   .bss:cio            : > RAMLS5,       PAGE = 1
-   .data               : > RAMLS5,       PAGE = 1
-   .sysmem             : > RAMLS5,       PAGE = 1
+   .bss                : > RAMLS2_5,       PAGE = 1
+   .bss:output         : > RAMLS1,       PAGE = 0
+   .bss:cio            : > RAMLS2_5,       PAGE = 1
+   .data               : > RAMLS2_5,       PAGE = 1
+   .sysmem             : > RAMLS2_5,       PAGE = 1
    /* Initalized sections go in Flash */
    .const              : > FLASHF,       PAGE = 0,       ALIGN(8)
 #else
    .pinit              : > FLASHB,       PAGE = 0,       ALIGN(8)
-   .ebss               : >> RAMLS5 | RAMGS0 | RAMGS1,    PAGE = 1
-   .esysmem            : > RAMLS5,       PAGE = 1
-   .cio                : > RAMLS5,       PAGE = 1
+   .ebss               : > RAMLS2_5,    PAGE = 1
+   .esysmem            : > RAMLS2_5,       PAGE = 1
+   .cio                : > RAMLS2_5,       PAGE = 1
    /* Initalized sections go in Flash */
    .econst             : >> FLASHF      PAGE = 0, ALIGN(8)
 #endif
 
-   Filter_RegsFile     : > RAMGS0,	   PAGE = 1
+   //Filter_RegsFile     : > RAMGS0,	   PAGE = 1
 
-   SHARERAMGS0		: > RAMGS0,		PAGE = 1
-   SHARERAMGS1		: > RAMGS1,		PAGE = 1
-   SHARERAMGS2		: > RAMGS2,		PAGE = 1
-   ramgs0           : > RAMGS0,     PAGE = 1
-   ramgs1           : > RAMGS1,     PAGE = 1
+   //SHARERAMGS0		: > RAMGS0,		PAGE = 1
+   //SHARERAMGS1		: > RAMGS1,		PAGE = 1
+   //SHARERAMGS2		: > RAMGS2,		PAGE = 1
+   //ramgs0           : > RAMGS0,     PAGE = 1
+   //ramgs1           : > RAMGS1,     PAGE = 1
+   ramgs0_15		: > RAMGS0_15
 
 #ifdef __TI_COMPILER_VERSION__
     #if __TI_COMPILER_VERSION__ >= 15009000
