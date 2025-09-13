@@ -226,7 +226,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="device|device/F2837xD_CodeStartBranch.asm|device/device.c|device/driverlib|2837xD_RAM_lnk_cpu1.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="appl/appl_goertzel.c|device|device/F2837xD_CodeStartBranch.asm|device/device.c|device/driverlib|2837xD_RAM_lnk_cpu1.cmd" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

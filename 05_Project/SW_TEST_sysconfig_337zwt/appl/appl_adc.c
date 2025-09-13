@@ -59,7 +59,11 @@ uint16_t ADC_ChannelsCount = 6;
 uint16_t ADC_Channel_Index = 0;
 eADCState_t ADC_Auto_Measure_State = ADC_STATE_STOPPED;
 uint16_t ADC_Auto_Measure_Request = 0;
+uint16_t ADC_Auto_Measure_Request_Single_Mode = 0;
 uint16_t ADC_Auto_Measure_Completed = 0;
+
+uint16_t ADC_Auto_Measure_Use_Index_Fixed = 0;
+uint16_t ADC_Channel_Index_Fixed = ADC_SOC_NUMBER0;     /* Corresponds to ADCA_Channels[ADC_Channel_Index_Fixed] to be measured */
 
 uint16_t ADC_Measurement_InProgress[4];
 uint16_t ADC_Measurement_WaitComplete[4];
@@ -510,7 +514,20 @@ void APPL_ADC_process(void)
     {
         if (ADC_Auto_Measure_Request)
         {
-            ADC_Channel_Index = 0;
+            if (ADC_Auto_Measure_Request_Single_Mode)
+            {
+                ADC_Auto_Measure_Request = 0;
+            }
+
+            if (ADC_Auto_Measure_Use_Index_Fixed)
+            {
+                ADC_Channel_Index = ADC_Channel_Index_Fixed;
+            }
+            else
+            {
+                ADC_Channel_Index = 0;
+            }
+
             setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
             setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
             setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
@@ -546,49 +563,68 @@ void APPL_ADC_process(void)
             ADC_Auto_Measure_Completed = 1;
         }
 
-        if ((ADC_Auto_Measure_Request) && (ADC_Auto_Measure_Completed))
+        if (ADC_Auto_Measure_Completed)
         {
-            //take results - for now only the first valid measurement result
-            ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
-            ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
-            ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
-            ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
-
-            ADC_Channel_Index++;
-            if (ADC_Channel_Index >= ADC_ChannelsCount)
+            if (ADC_Auto_Measure_Request)
             {
-                ADC_Channel_Index = 0;
+                if (ADC_Auto_Measure_Request_Single_Mode)
+                {
+                    ADC_Auto_Measure_Request = 0;
+                }
+                //take results - for now only the first valid measurement result
+                ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
+                ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
+                ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
+                ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
+
+                if (ADC_Auto_Measure_Use_Index_Fixed)
+                {
+                    ADC_Channel_Index = ADC_Channel_Index_Fixed;
+                }
+                else
+                {
+                    ADC_Channel_Index++;
+                    if (ADC_Channel_Index >= ADC_ChannelsCount)
+                    {
+                        ADC_Channel_Index = 0;
+                    }
+                }
+                setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
+                setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
+                setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
+                setupADCContinuous(ADCD_BASE, ADCD_Channels[ADC_Channel_Index]);
+
+                //re-enable trigger ADC_SOC_NUMBER0 with ADCINT2 for continuous adc mode if not used setupADCContinuous
+    //            ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+    //            ADC_setInterruptSOCTrigger(ADCB_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+    //            ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+    //            ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+
+                //ADC_Auto_Measure_State = ADC_STATE_RUNNING;
+                ADC_Measurement_WaitComplete[0] = 0;
+                ADC_Measurement_WaitComplete[1] = 0;
+                ADC_Measurement_WaitComplete[2] = 0;
+                ADC_Measurement_WaitComplete[3] = 0;
+                ADC_Measurement_InProgress[0] = 1;
+                ADC_Measurement_InProgress[1] = 1;
+                ADC_Measurement_InProgress[2] = 1;
+                ADC_Measurement_InProgress[3] = 1;
+                ADC_Auto_Measure_Completed = 0;
+                APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                APPL_ADC_timer_start_adc[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                ADC_forceSOC(ADCA_BASE, ADC_SOC_NUMBER0);
+                ADC_forceSOC(ADCB_BASE, ADC_SOC_NUMBER0);
+                ADC_forceSOC(ADCC_BASE, ADC_SOC_NUMBER0);
+                ADC_forceSOC(ADCD_BASE, ADC_SOC_NUMBER0);
             }
-            setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCD_BASE, ADCD_Channels[ADC_Channel_Index]);
-
-            //re-enable trigger ADC_SOC_NUMBER0 with ADCINT2 for continuous adc mode if not used setupADCContinuous
-//            ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-//            ADC_setInterruptSOCTrigger(ADCB_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-//            ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-//            ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-
-            //ADC_Auto_Measure_State = ADC_STATE_RUNNING;
-            ADC_Measurement_WaitComplete[0] = 0;
-            ADC_Measurement_WaitComplete[1] = 0;
-            ADC_Measurement_WaitComplete[2] = 0;
-            ADC_Measurement_WaitComplete[3] = 0;
-            ADC_Measurement_InProgress[0] = 1;
-            ADC_Measurement_InProgress[1] = 1;
-            ADC_Measurement_InProgress[2] = 1;
-            ADC_Measurement_InProgress[3] = 1;
-            ADC_Auto_Measure_Completed = 0;
-            APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            ADC_forceSOC(ADCA_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCB_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCC_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCD_BASE, ADC_SOC_NUMBER0);
+            else
+            {
+                ADC_Auto_Measure_State = ADC_STATE_STOPPED;
+            }
         }
+
         break;
     }
     }
