@@ -1,0 +1,100 @@
+VERSION
+9
+
+COMMSETTINGS
+0
+COM1
+COM2
+19200
+0
+63
+4
+0
+0
+
+COMMDISPLAY
+0
+
+VERSATAP
+0
+
+CHANNELALIAS
+
+
+
+SEND
+0
+Write Single Register Adr=258, Value=7
+01 06 01 02 00 07 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+SEND
+1
+Write Single Coil Adr=100,ON
+01 05 00 64 FF 00 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+SEND
+2
+Write Single Coil Adr=100,OFF
+01 05 00 64 00 00 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+SEND
+3
+Read Input Register Slave=1
+01 04 00 01 00 01 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+SEND
+4
+Read Input Register Slave=2, Adr=1, Len=3
+02 04 00 01 00 03 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+SEND
+5
+Read Input Register Slave=?,Adr=3,Len=1
+?? 04 00 03 00 01 00 00
+0
+5
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+
+RECEIVE
+0
+Generic Frame Detector
+&& 02 ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ?? ?? ?? ??
+-1
+1
+COMMENT %_LDetected Modbus Frame = %_H(3,-1)%_LSlaveID=%_H(3,1)%_LFunctionCode=%_H(4,1)%_LAddr/Data=%_H(5,-3)%_LCRC=%_H(-2,-1)
+1
+1
+0
+1
+CHECKSUM (3, -3) CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+0
+
+RECEIVE
+1
+Input Register Answer (2 byte)
+?? 04 02 ?? ?? 00 00
+-1
+1
+COMMENT %_L Input Register Answer: Slave=%_D(1,1) ValueHex=%_H(4,1)%_H(5,1)
+1
+1
+0
+1
+CHECKSUM CRC-MODBUS L # MODBUS RTU checksum. Lower Byte first ('Little Endian')
+0
+

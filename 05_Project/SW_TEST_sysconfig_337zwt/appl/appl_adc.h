@@ -9,6 +9,13 @@
 #define APPL_APPL_ADC_H_
 
 //
+// Include Files
+//
+
+#include <stdint.h>
+
+
+//
 // Configuration Definitions
 //
 
@@ -30,7 +37,9 @@ extern uint16_t APPL_ADC_timer_count_adc[4];
 //
 // Functions External Usage
 //
+void APPL_ADC_init(void);
 void APPL_ADC_process(void);
+void APPL_ADC_StopTriggering(uint32_t adcBase);
 
 
 #endif /* APPL_APPL_ADC_H_ */

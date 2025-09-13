@@ -6,8 +6,8 @@
  */
 
 #include <stdint.h>
-#include "mbdata.h"
 #include "board.h"
+#include "mbdata.h"
 
 //
 // Read All GPIO Pins

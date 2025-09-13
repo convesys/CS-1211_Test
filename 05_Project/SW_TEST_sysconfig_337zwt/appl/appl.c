@@ -31,7 +31,7 @@ void APPL_main(void)
     uint16_t timer_start = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     //APPL_ADC_Start();
     APPL_GPIO_Fill();
-    //APPL_ADC_Fill();
+    APPL_ADC_Fill();
     uint16_t timer_final = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     inp_reg_mem[100] =  timer_start - timer_final;
     MB_Main();
@@ -51,6 +51,7 @@ void APPL_preinit(void)
 
 void APPL_postinit(void)
 {
+    APPL_ADC_init();
     EINT;
     ERTM;
 }

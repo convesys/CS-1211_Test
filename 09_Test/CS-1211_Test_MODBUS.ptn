@@ -1,0 +1,274 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang2057\deflangfe1031{\fonttbl{\f0\fmodern\fprq1\fcharset0 Calibri;}{\f1\fnil\fcharset0 Consolas;}{\f2\fswiss\fprq2\fcharset0 Arial;}{\f3\fswiss\fprq2\fcharset0 Calibri;}{\f4\fnil\fcharset0 Calibri;}{\f5\fmodern\fprq1\fcharset0 Consolas;}{\f6\fnil\fprq2\fcharset2 Wingdings;}}
+{\colortbl ;\red0\green0\blue0;\red4\green129\blue6;\red37\green0\blue167;\red208\green0\blue0;}
+\viewkind4\uc1\pard\cf1\f0\fs20 
+\par \ul |~~~~ DOCKLIGHT PROJECT DOCUMENTATION
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang0\f2\fs20 This project demonstrates 
+\par - basic Modbus RTU master functionality.
+\par - basic Modbus frame seperation / decoding, e.g. when monitoring a RS485 bus. 
+\par 
+\par You can \lang1033 send different types of \lang0 Modbus \lang1033 RTU commands with different \lang0 Modbus \lang1033 Function Codes and uses Docklight's checksum functionality for on-the-fly CRC calculation. It also shows how to detect an incoming Modbus frame, and further process the data. 
+\par 
+\par You can also separate and parse incoming Modbus telegrams, even in 2-wire RS485 applications, as long as there is a significant communication pause between the telegrams. See the Receive Sequence  "Generic Frame Detector" for details. 
+\par \lang0 
+\par The project file uses the communication settings listed below, according to the Modbus implementation class "Basic":
+\par \lang1033 Communication Mode = Send/Receive
+\par \lang0 Send/Receive on comm. Channel\lang1033  = \lang0 COM1
+\par COM Port Settings\lang1033  = \lang0 9600 Baud, Even parity, 8 Data Bits, 1 Stop Bit \f3 
+\par 
+\par \pard A Modbus Read Input command+answer could look like this: 
+\par 
+\par \cf2\lang1031\f1 18.09.2019 20:28:01.867 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par 18.09.2019 20:28:01.980 [RX] - \cf4 01 04 02 04 01 7A 30 \cf2  
+\par Detected Modbus Frame = 01 04 02 04 01 7A 30
+\par SlaveID=01
+\par FunctionCode=04
+\par Addr/Data=02 04 01
+\par CRC=7A 30
+\par  
+\par  Input Register Answer: Slave=001 ValueHex=0401
+\par \cf0\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 0    NAME=Read ADC Data Request
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 4 = Read Input Register
+\par \cf0\f5\fs19 
+\par \cf1\f2\fs20 Reads a single Register Value
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 01 \cf1\f2 Address Lo Byte = 1 \cf3\f5 
+\par 00 \cf1\f2 Number of Registers Hi = 0\cf3\f5 
+\par 01 \cf1\f2 Number of Registers Lo = 1 \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:43:28.277 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:43:28.378 [RX] - \cf4 01 04 02 04 01 7A 30\cf0\fs19 
+\par \lang1031\f1 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 1    NAME=Read ADCA SOC0 Request
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 4 = Read Input Register
+\par \cf0\f5\fs19 
+\par \cf1\f2\fs20 Reads a single Register Value
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 01 \cf1\f2 Address Lo Byte = 1 \cf3\f5 
+\par 00 \cf1\f2 Number of Registers Hi = 0\cf3\f5 
+\par 01 \cf1\f2 Number of Registers Lo = 1 \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:43:28.277 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:43:28.378 [RX] - \cf4 01 04 02 04 01 7A 30\cf0\fs19 
+\par \lang1031\f1 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 2    NAME=Write Single Register Adr=258, Value=7
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 6 = Write Single Holding Register
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 06 \cf1\f2 Function Code 6 = Write Single Holding Register
+\par \cf3\f5 01 \cf1\f2 Address Hi Byte = 1
+\par \cf3\f5 02 \cf1\f2 Address Lo Byte = 2 \f6\'e0\f2  Address = 1 * 256 + 2 = 258\cf3\f5   
+\par 00 \cf1\f2 Data Hi = 0\cf3\f5   
+\par 07 \cf1\f2 Data Lo = 7 \f6\'e0\f2  Integer Value = 7\cf3\f5   
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf0\lang0\fs19 
+\par \cf1\lang1033\f2\fs20 Example transmission:
+\par \cf2\f5 16.09.2019 17:53:55.176 [TX] - \cf3 01 06 01 02 00 07 68 34  
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:53:55.277 [RX] - \cf4 01 06 01 02 00 07 68 34 \cf1\lang0\f3 
+\par \cf0\lang1031\f1\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 3    NAME=Write Single Coil Adr=100,ON
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 5 = Write Single Coil (Write single digital output) 
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 05 \cf1\f2 Function Code 5 = Write Single Coil
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 64 \cf1\f2 Address Lo Byte = 100 \f6\'e0\f2  Address = 0 * 256 + 100 = 100\cf3\f5   
+\par FF \cf1\f2 Data Hi = FF \f6\'e0\f2  Bit value 1 = ON\cf3\f5 
+\par 00 \cf1\f2 Data Lo (not used)\cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf0\lang0\fs19 
+\par \cf1\lang1033\f2\fs20 Example transmission:
+\par \cf2\f5 16.09.2019 17:54:43.979 [TX] - \cf3 01 05 00 64 FF 00 CD E5 \cf2 
+\par \cf1\f2 Example Modbus slave answer:\cf2\f5 
+\par 16.09.2019 17:54:44.080 [RX] - \cf4 01 05 00 64 FF 00 CD E5 \cf1\lang0\f3 
+\par \cf0\lang1031\f1\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 4    NAME=Write Single Coil Adr=100,OFF
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Second example for Modbus Function Code 5 = Write Single Coil (Write single digital output) 
+\par \cf0\f5\fs19 
+\par \cf1\f2\fs20 Like "Write Single Coil ON", but the output is now set to 0 = OFF
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 05 \cf1\f2 Function Code 5 = Write Single Coil
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 64 \cf1\f2 Address Lo Byte = 100 \f6\'e0\f2  Address = 0 * 256 + 100 = 100\cf3\f5   
+\par 00 \cf1\f2 Data Hi = 0 \f6\'e0\f2  Bit value 1 = OFF\cf3\f5 
+\par 00 \cf1\f2 Data Lo (not used)\cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:19:56.204 [TX] - \cf3 01 05 00 64 00 00 8C 15 \cf2 
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:19:56.305 [RX] - \cf4 01 05 00 64 00 00 8C 15 \cf1\lang0\f3 
+\par \cf0\lang1031\f1\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 5    NAME=Read Input Register Slave=1
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 4 = Read Input Register
+\par \cf0\f5\fs19 
+\par \cf1\f2\fs20 Reads a single Register Value
+\par 
+\par Sequence Definition:
+\par \cf3\f5 01 \cf1\f2 Address = 1
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 01 \cf1\f2 Address Lo Byte = 1 \cf3\f5 
+\par 00 \cf1\f2 Number of Registers Hi = 0\cf3\f5 
+\par 01 \cf1\f2 Number of Registers Lo = 1 \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:43:28.277 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:43:28.378 [RX] - \cf4 01 04 02 04 01 7A 30\cf0\fs19 
+\par \lang1031\f1 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 6    NAME=Read Input Register Slave=2, Adr=1, Len=3
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Second example for Modbus Function Code 4 = Read Input Register
+\par A request for three registers for Slave = 2
+\par 
+\par Sequence Definition:
+\par \cf3\f5 02 \cf1\f2 Address = 2
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 01 \cf1\f2 Address Lo Byte = 1 \cf3\f5 
+\par 00 \cf1\f2 Number of Registers Hi = 0\cf3\f5 
+\par 03 \cf1\f2 Number of Registers Lo = 3 \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:48:04.599 [TX] - \cf3\lang1031\f1 02 04 00 01 00 03 E1 F8\lang1033\f5 
+\par \cf1\f2 Example Modbus slave answer:\cf2\f5 
+\par 16.09.2019 17:48:04.700 [RX] - \cf4\lang1031\f1 02 04 06 04 01 00 00 FF FF 49 97\lang1033\f5 
+\par \cf0\lang1031\f1\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT SEND SEQUENCE INDEX= 7    NAME=Read Input Register Slave=?,Adr=3,Len=1
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for Modbus Function Code 4 = Read Input Register
+\par 
+\par Sequence Definition:
+\par \cf3\f5 ?? \cf1\f2 (Ask for Slave Address)
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 00 \cf1\f2 Address Hi Byte = 0
+\par \cf3\f5 03 \cf1\f2 Address Lo Byte = 3 \cf3\f5 
+\par 00 \cf1\f2 Number of Registers Hi = 0\cf3\f5 
+\par 01 \cf1\f2 Number of Registers Lo = 1 \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par The applicable CRC is calculated according to the "checksum" setting on-the-fly\cf3\f5 
+\par \cf1\f2 
+\par Example transmission:
+\par \cf2\f5 16.09.2019 17:43:28.277 [TX] - \cf3\lang1031\f1 01 04 00 03 00 01 C1 CA\cf2\lang1033\f5 
+\par \cf1\f2 Example Modbus slave answer:
+\par \cf2\f5 16.09.2019 17:43:28.378 [RX] - \cf4\lang1031\f1 01 04 02 FF FF B8 80\cf0\lang1033\f5\fs19 
+\par \lang1031\f1 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT RECEIVE SEQUENCE INDEX= 0    NAME=Generic Frame Detector
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \cf1\lang1033\f2\fs20 Example for detecting a valid Modbus frame in a continuous stream of data, e.g. when using Docklight Monitoring Mode and passively monitoring a RS485 bus. 
+\par 
+\par This sequence will detect any Modbus frame up to 32 bytes, if the following applies: 
+\par - there is at least a 20 ms pause before telegram start
+\par - the telegram has a correct CRC checksum at the end. 
+\par 
+\par By constantly looking out for a valid CRC checksum, Docklight is able to detect the actual end-of-telegram, even in a RX data stream of variable-length Modbus frames. 
+\par 
+\par See also the Checksum Setting   
+\par \f5 (3, -3) CRC-MODBUS L
+\par \f2 The first two characters are used for the 20ms delay specification, so the actual data begins at Receive Sequence Character no. 3
+\par 
+\par TIP: For a more elaborate frame detector you could use a small Docklight script and the Sub DL_OnReceive() event procedure.  \f3 
+\par 
+\par An example detection could look like this:
+\par \cf2\lang1031\f1 18.09.2019 20:23:29.197 [RX] - \cf4 01 06 01 02 00 07 68 34 \cf2  
+\par Detected Modbus Frame = 01 06 01 02 00 07 68 34
+\par SlaveID=01
+\par FunctionCode=06
+\par Addr/Data=01 02 00 07
+\par CRC=68 34
+\par \cf0\fs19 
+\par \pard\lang2057\fs19 
+\par \cf1\ul\f4\fs20 |~~~~ DOCKLIGHT RECEIVE SEQUENCE INDEX= 1    NAME=Input Register Answer (2 byte)
+\par \cf0\ulnone\f1\fs19 
+\par \pard\lang1031\fs19 
+\par \pard\nowidctlpar\cf1\lang1033\f2\fs20 Example for detecting & evaluating a Modbus slave answer to a "Function Code 4 = Read Input Register" request. This definition works for number registers = 1 / data size = 2 only. 
+\par \cf0\f5\fs19 
+\par \cf1\f2\fs20 Sequence Definition:
+\par \cf3\f5 ?? \cf1\f2 Slave address, 0-255 accepted
+\par \cf3\f5 04 \cf1\f2 Function Code 4 = Read Input Register
+\par \cf3\f5 02 \cf1\f2 Number of Bytes = 2
+\par \cf3\f5 ?? \cf1\f2 Register Value Hi, 0-255 accepted \cf3\f5 
+\par ?? \cf1\f2 Register Value Lo, 0-255 accepted \cf3\f5 
+\par 00 \cf1\f2 CRC Hi, dummy/placeholder\cf3\f5 
+\par 00 \cf1\f2 CRC Lo, dummy/placeholder
+\par \pard\f3 
+\par \pard\nowidctlpar Example processing: \cf0\f5\fs19 
+\par 
+\par \cf2\fs20 16.09.2019 17:30:52.006 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par 16.09.2019 17:30:52.107 [RX] - \cf4 01 04 02 00 01 78 F0 \cf2  Input Register Slave=001 ValueHex=0001
+\par 
+\par 16.09.2019 17:30:59.668 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par 16.09.2019 17:30:59.768 [RX] - \cf4 01 04 02 00 02 38 F1 \cf2  Input Register Slave=001 ValueHex=0002
+\par 
+\par 16.09.2019 17:31:07.268 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par 16.09.2019 17:31:07.368 [RX] - \cf4 01 04 02 00 14 B9 3F \cf2  Input Register Slave=001 ValueHex=0014
+\par 
+\par 16.09.2019 17:31:12.475 [TX] - \cf3 01 04 00 01 00 01 60 0A \cf2 
+\par 16.09.2019 17:31:12.580 [RX] - \cf4 01 04 02 04 01 7A 30 \cf2  Input Register Slave=001 ValueHex=0401\cf0\fs19 
+\par \lang1031\f1 
+\par \pard\lang2057\fs19 
+\par }
+ 
