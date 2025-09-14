@@ -576,7 +576,7 @@ void APPL_ADC_process(void)
             DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
             DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
             DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
-            if (DMA_StartDelayLoops[0])
+            if (DMA_StartDelayLoops[0] == 0)
             {
                 DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
                 DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers
@@ -666,7 +666,7 @@ void APPL_ADC_process(void)
                 DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
                 DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
                 DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
-                if (DMA_StartDelayLoops[0])
+                if (DMA_StartDelayLoops[0] == 0)
                 {
                     DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
                     DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers

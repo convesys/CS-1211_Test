@@ -34,7 +34,7 @@
 #define APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS          15      //15->75ns
 
 
-#define APPL_ADC_START_DMA_DELAYED_ADC_CYCLES    0
+#define APPL_ADC_START_DMA_DELAYED_ADC_CYCLES    1
 
 //
 // Variable External Usage
@@ -48,6 +48,7 @@ extern uint16_t APPL_ADC_timer_count_adc[4];
 void APPL_ADC_init(void);
 void APPL_ADC_process(void);
 void APPL_ADC_StopTriggering(uint32_t adcBase);
+void APPL_ADC_Fill(void);
 
 
 #endif /* APPL_APPL_ADC_H_ */
