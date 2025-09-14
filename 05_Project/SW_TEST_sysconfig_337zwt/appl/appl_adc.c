@@ -389,6 +389,9 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
     {
         acqps = 14; // 75ns sampling time
                     // 44 cycles conversion time
+        acqps = 63; // 320ns
+        acqps = 127; // 640ns
+        acqps = 255; // 1280ns
     }
     else //resolution is 16-bit
     {
