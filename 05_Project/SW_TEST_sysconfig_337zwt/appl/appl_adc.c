@@ -380,6 +380,8 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
 {
     uint16_t acqps;
 
+    ADC_disableInterrupt(adcBase, ADC_INT_NUMBER1);
+    ADC_disableInterrupt(adcBase, ADC_INT_NUMBER2);
     //
     // Determine minimum acquisition window (in SYSCLKS) based on resolution
     //
@@ -438,12 +440,6 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
                  (ADC_Channel)channel, acqps);
 
     //
-    // Enable continuous operation by setting the last SOC to re-trigger
-    // the first
-    //
-    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER0,    // ADCA
-                               ADC_INT_SOC_TRIGGER_ADCINT2);
-    //
     // Configure ADCINT1 trigger for SOC1-SOC15
     //
     ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER1,
@@ -478,8 +474,20 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
                                ADC_INT_SOC_TRIGGER_ADCINT1);
 
     //
+    // Enable continuous operation by setting the last SOC to re-trigger
+    // the first
+    //
+    ADC_setInterruptSOCTrigger(adcBase, ADC_SOC_NUMBER0,    // ADCA
+                               ADC_INT_SOC_TRIGGER_ADCINT2);
+    //
     // Enable ADCINT1 & ADCINT2. Disable ADCINT3 & ADCINT4.
     //
+
+    ADC_clearInterruptStatus(adcBase, ADC_INT_NUMBER1);
+    ADC_clearInterruptStatus(adcBase, ADC_INT_NUMBER2);
+    ADC_clearInterruptStatus(adcBase, ADC_INT_NUMBER3);
+    ADC_clearInterruptStatus(adcBase, ADC_INT_NUMBER4);
+
     ADC_enableInterrupt(adcBase, ADC_INT_NUMBER1);
     ADC_enableInterrupt(adcBase, ADC_INT_NUMBER2);
     ADC_disableInterrupt(adcBase, ADC_INT_NUMBER3);
@@ -542,6 +550,20 @@ void APPL_ADC_process(void)
             ADC_Measurement_InProgress[2] = 1;
             ADC_Measurement_InProgress[3] = 1;
             ADC_Auto_Measure_Completed = 0;
+
+            DMA_clearTriggerFlag(DMA1_inst_BASE);
+            DMA_clearTriggerFlag(DMA2_inst_BASE);
+            DMA_clearTriggerFlag(DMA3_inst_BASE);
+            DMA_clearTriggerFlag(DMA4_inst_BASE);
+            DMA_enableTrigger(DMA1_inst_BASE);
+            DMA_enableTrigger(DMA2_inst_BASE);
+            DMA_enableTrigger(DMA3_inst_BASE);
+            DMA_enableTrigger(DMA4_inst_BASE);
+            DMA_startChannel(DMA1_inst_BASE);
+            DMA_startChannel(DMA2_inst_BASE);
+            DMA_startChannel(DMA3_inst_BASE);
+            DMA_startChannel(DMA4_inst_BASE);
+
             APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
             APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
             APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
@@ -610,6 +632,20 @@ void APPL_ADC_process(void)
                 ADC_Measurement_InProgress[2] = 1;
                 ADC_Measurement_InProgress[3] = 1;
                 ADC_Auto_Measure_Completed = 0;
+
+                DMA_clearTriggerFlag(DMA1_inst_BASE);
+                DMA_clearTriggerFlag(DMA2_inst_BASE);
+                DMA_clearTriggerFlag(DMA3_inst_BASE);
+                DMA_clearTriggerFlag(DMA4_inst_BASE);
+                DMA_enableTrigger(DMA1_inst_BASE);
+                DMA_enableTrigger(DMA2_inst_BASE);
+                DMA_enableTrigger(DMA3_inst_BASE);
+                DMA_enableTrigger(DMA4_inst_BASE);
+                DMA_startChannel(DMA1_inst_BASE);
+                DMA_startChannel(DMA2_inst_BASE);
+                DMA_startChannel(DMA3_inst_BASE);
+                DMA_startChannel(DMA4_inst_BASE);
+
                 APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
                 APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
                 APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);

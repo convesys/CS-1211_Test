@@ -40,6 +40,9 @@ __interrupt void INT_DMA1_inst_ISR(void)
     //
     // Stop the ADC by removing the trigger for SOC0
     //
+    DMA_stopChannel(DMA1_inst_BASE);
+    DMA_disableTrigger(DMA1_inst_BASE);
+    DMA_clearTriggerFlag(DMA1_inst_BASE);
     APPL_ADC_StopTriggering(ADCA_BASE);
     //ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
 
