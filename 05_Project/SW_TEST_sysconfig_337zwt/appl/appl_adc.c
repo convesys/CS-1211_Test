@@ -14,6 +14,9 @@
 #include "mbdata.h"
 #include "appl_adc.h"
 
+//
+// Configuration Definitions
+//
 
 
 //
@@ -35,10 +38,10 @@ typedef enum
 #pragma DATA_SECTION(ADCB_ResultBuffer, "ramgs0_15");
 #pragma DATA_SECTION(ADCC_ResultBuffer, "ramgs0_15");
 #pragma DATA_SECTION(ADCD_ResultBuffer, "ramgs0_15");
-uint16_t ADCA_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE + 16];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
-uint16_t ADCB_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE + 16];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
-uint16_t ADCC_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE + 16];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
-uint16_t ADCD_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE + 16];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
+uint16_t ADCA_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
+uint16_t ADCB_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
+uint16_t ADCC_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
+uint16_t ADCD_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
 
 uint16_t ADCA_Results[16];
 uint16_t ADCB_Results[16];
@@ -123,11 +126,19 @@ uint16_t APPL_ADC_timer_start_adc[4];
 uint16_t timer_final_adc[4];
 uint16_t APPL_ADC_timer_count_adc[4];
 
+
+
+uint16_t DMA_StartDelayLoops[4];
+
+uint16_t DMA_StartDelayLoopsConfig = APPL_ADC_START_DMA_DELAYED_ADC_CYCLES;
+
+
 //
 // Function Prototypes
 //
 
 void APPL_ADC_StopMeasurementDetect(uint16_t adcIndex);
+void APPL_ADC_DelayedDMAStart(uint16_t adcIndex);
 
 //
 // Interrupt Functions
@@ -158,6 +169,7 @@ __interrupt void INT_ADCA_inst_2_ISR(void)
     timer_final_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     APPL_ADC_timer_count_adc[0] = APPL_ADC_timer_start_adc[0] - timer_final_adc[0];
     APPL_ADC_StopMeasurementDetect(0);
+    APPL_ADC_DelayedDMAStart(0);
 
     //
     // Acknowledge interrupt
@@ -218,6 +230,7 @@ __interrupt void INT_ADCB_inst_2_ISR(void)
     timer_final_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     APPL_ADC_timer_count_adc[1] = APPL_ADC_timer_start_adc[1] - timer_final_adc[1];
     APPL_ADC_StopMeasurementDetect(1);
+    APPL_ADC_DelayedDMAStart(1);
 
     //
     // Acknowledge interrupt
@@ -278,6 +291,7 @@ __interrupt void INT_ADCC_inst_2_ISR(void)
     timer_final_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     APPL_ADC_timer_count_adc[2] = APPL_ADC_timer_start_adc[2] - timer_final_adc[2];
     APPL_ADC_StopMeasurementDetect(2);
+    APPL_ADC_DelayedDMAStart(2);
 
     //
     // Acknowledge interrupt
@@ -338,6 +352,7 @@ __interrupt void INT_ADCD_inst_2_ISR(void)
     timer_final_adc[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     APPL_ADC_timer_count_adc[3] = APPL_ADC_timer_start_adc[3] - timer_final_adc[3];
     APPL_ADC_StopMeasurementDetect(3);
+    APPL_ADC_DelayedDMAStart(3);
 
     //
     // Acknowledge interrupt
@@ -387,11 +402,14 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
     //
     if(APPL_ADC_RESOLUTION == 12)
     {
-        acqps = 14; // 75ns sampling time
-                    // 44 cycles conversion time
-        acqps = 63; // 320ns
-        acqps = 127; // 640ns
-        acqps = 255; // 1280ns
+        acqps = 14; // 75ns sampling time (SYSCLK Ticks + 1 - at 200MHz 14 means (14+1)*5ns->75 ns)
+        acqps = 19; // 100ns sampling time (SYSCLK Ticks + 1 - at 200MHz 19 means (19+1)*5ns->100 ns)
+                    // Table 11-12. ADC Timings in 12-bit Mode 44 cycles conversion time - 44 cycles @ 200MHz (adc presacaler 1:4) -> 44*5ns -> 220ns
+        acqps = APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS - 1;
+        //acqps = 63; // 320ns
+        //acqps = 127; // 640ns
+        //acqps = 255; // 1280ns
+        //acqps = 511; // 2560ns
     }
     else //resolution is 16-bit
     {
@@ -554,18 +572,25 @@ void APPL_ADC_process(void)
             ADC_Measurement_InProgress[3] = 1;
             ADC_Auto_Measure_Completed = 0;
 
-            DMA_clearTriggerFlag(DMA1_inst_BASE);
-            DMA_clearTriggerFlag(DMA2_inst_BASE);
-            DMA_clearTriggerFlag(DMA3_inst_BASE);
-            DMA_clearTriggerFlag(DMA4_inst_BASE);
-            DMA_enableTrigger(DMA1_inst_BASE);
-            DMA_enableTrigger(DMA2_inst_BASE);
-            DMA_enableTrigger(DMA3_inst_BASE);
-            DMA_enableTrigger(DMA4_inst_BASE);
-            DMA_startChannel(DMA1_inst_BASE);
-            DMA_startChannel(DMA2_inst_BASE);
-            DMA_startChannel(DMA3_inst_BASE);
-            DMA_startChannel(DMA4_inst_BASE);
+            DMA_StartDelayLoops[0] = DMA_StartDelayLoopsConfig;
+            DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
+            DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
+            DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
+            if (DMA_StartDelayLoops[0])
+            {
+                DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
+                DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers
+                DMA_clearTriggerFlag(DMA3_inst_BASE);   //clear previous ADC triggers
+                DMA_clearTriggerFlag(DMA4_inst_BASE);   //clear previous ADC triggers
+//                DMA_enableTrigger(DMA1_inst_BASE);
+//                DMA_enableTrigger(DMA2_inst_BASE);
+//                DMA_enableTrigger(DMA3_inst_BASE);
+//                DMA_enableTrigger(DMA4_inst_BASE);
+                DMA_startChannel(DMA1_inst_BASE);
+                DMA_startChannel(DMA2_inst_BASE);
+                DMA_startChannel(DMA3_inst_BASE);
+                DMA_startChannel(DMA4_inst_BASE);
+            }
 
             APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
             APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
@@ -636,18 +661,28 @@ void APPL_ADC_process(void)
                 ADC_Measurement_InProgress[3] = 1;
                 ADC_Auto_Measure_Completed = 0;
 
-                DMA_clearTriggerFlag(DMA1_inst_BASE);
-                DMA_clearTriggerFlag(DMA2_inst_BASE);
-                DMA_clearTriggerFlag(DMA3_inst_BASE);
-                DMA_clearTriggerFlag(DMA4_inst_BASE);
-                DMA_enableTrigger(DMA1_inst_BASE);
-                DMA_enableTrigger(DMA2_inst_BASE);
-                DMA_enableTrigger(DMA3_inst_BASE);
-                DMA_enableTrigger(DMA4_inst_BASE);
-                DMA_startChannel(DMA1_inst_BASE);
-                DMA_startChannel(DMA2_inst_BASE);
-                DMA_startChannel(DMA3_inst_BASE);
-                DMA_startChannel(DMA4_inst_BASE);
+
+                DMA_StartDelayLoops[0] = DMA_StartDelayLoopsConfig;
+                DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
+                DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
+                DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
+                if (DMA_StartDelayLoops[0])
+                {
+                    DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
+                    DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers
+                    DMA_clearTriggerFlag(DMA3_inst_BASE);   //clear previous ADC triggers
+                    DMA_clearTriggerFlag(DMA4_inst_BASE);   //clear previous ADC triggers
+    //                DMA_enableTrigger(DMA1_inst_BASE);
+    //                DMA_enableTrigger(DMA2_inst_BASE);
+    //                DMA_enableTrigger(DMA3_inst_BASE);
+    //                DMA_enableTrigger(DMA4_inst_BASE);
+                    DMA_startChannel(DMA1_inst_BASE);
+                    DMA_startChannel(DMA2_inst_BASE);
+                    DMA_startChannel(DMA3_inst_BASE);
+                    DMA_startChannel(DMA4_inst_BASE);
+                }
+
+
 
                 APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
                 APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
@@ -669,6 +704,37 @@ void APPL_ADC_process(void)
     }
 
 }
+
+void APPL_ADC_DelayedDMAStart(uint16_t adcIndex)
+{
+    if (DMA_StartDelayLoops[adcIndex])
+    {
+        DMA_StartDelayLoops[adcIndex]--;
+        if (DMA_StartDelayLoops[adcIndex] == 0)
+        {
+            switch(adcIndex)
+            {
+            case 0:
+                DMA_clearTriggerFlag(DMA1_inst_BASE);
+                DMA_startChannel(DMA1_inst_BASE);
+                break;
+            case 1:
+                DMA_clearTriggerFlag(DMA2_inst_BASE);
+                DMA_startChannel(DMA2_inst_BASE);
+                break;
+            case 2:
+                DMA_clearTriggerFlag(DMA3_inst_BASE);
+                DMA_startChannel(DMA3_inst_BASE);
+                break;
+            case 3:
+                DMA_clearTriggerFlag(DMA4_inst_BASE);
+                DMA_startChannel(DMA4_inst_BASE);
+                break;
+            }
+        }
+    }
+}
+
 
 void APPL_ADC_StopTriggering(uint32_t adcBase)
 {

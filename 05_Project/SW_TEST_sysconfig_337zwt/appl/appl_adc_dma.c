@@ -40,9 +40,9 @@ __interrupt void INT_DMA1_inst_ISR(void)
     //
     // Stop the ADC by removing the trigger for SOC0
     //
-    DMA_stopChannel(DMA1_inst_BASE);
-    DMA_disableTrigger(DMA1_inst_BASE);
-    DMA_clearTriggerFlag(DMA1_inst_BASE);
+//    DMA_stopChannel(DMA1_inst_BASE);
+//    DMA_disableTrigger(DMA1_inst_BASE);
+//    DMA_clearTriggerFlag(DMA1_inst_BASE);
     APPL_ADC_StopTriggering(ADCA_BASE);
     //ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
 
@@ -78,7 +78,7 @@ __interrupt void INT_DMA3_inst_ISR(void)
     // Stop the ADC by removing the trigger for SOC0
     //
     APPL_ADC_StopTriggering(ADCC_BASE);
-    ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
+    //ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
 
     timer_final_dma[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     timer_count_dma[2] = APPL_ADC_timer_start_adc[2] - timer_final_dma[2];
@@ -95,7 +95,7 @@ __interrupt void INT_DMA4_inst_ISR(void)
     // Stop the ADC by removing the trigger for SOC0
     //
     APPL_ADC_StopTriggering(ADCD_BASE);
-    ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
+    //ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_NONE);
 
     timer_final_dma[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
     timer_count_dma[3] = APPL_ADC_timer_start_adc[3] - timer_final_dma[3];

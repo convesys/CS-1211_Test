@@ -19,14 +19,22 @@
 // Configuration Definitions
 //
 
-#define APPL_ADC_RESULTS_BUFFER_SIZE    1024    //buffer size for storing conversion results for 1 channel
+#define APPL_ADC_RESULTS_BUFFER_SIZE                    16384    //buffer size for storing conversion results for 1 channel
 
-#define APPL_ADC_RESOLUTION             12
+#define APPL_ADC_RESOLUTION                             12
 // 12 for 12-bit conversion resolution, which supports (ADC_MODE_SINGLE_ENDED)
 // Sample on single pin (VREFLO is the low reference)
 // Or 16 for 16-bit conversion resolution, which supports (ADC_MODE_DIFFERENTIAL)
 // Sample on pair of pins (difference between pins is converted, subject to
 // common mode voltage requirements; see the device data manual)
+
+
+#define APPL_ADC_FIRST_VALID_SAMPLE_BUFFER_INDEX        4       //first valid sample index in buffer - mostly because small sampling time and if adc continuous conversions not started before dma
+
+#define APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS          15      //15->75ns
+
+
+#define APPL_ADC_START_DMA_DELAYED_ADC_CYCLES    0
 
 //
 // Variable External Usage

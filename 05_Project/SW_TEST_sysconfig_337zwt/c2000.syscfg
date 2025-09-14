@@ -22,6 +22,10 @@ const led4           = led.addInstance();
 const cputimer       = scripting.addModule("/driverlib/cputimer.js", {}, false);
 const cputimer1      = cputimer.addInstance();
 const cputimer2      = cputimer.addInstance();
+const dac            = scripting.addModule("/driverlib/dac.js", {}, false);
+const dac1           = dac.addInstance();
+const dac2           = dac.addInstance();
+const dac3           = dac.addInstance();
 const device_support = scripting.addModule("/driverlib/device_support.js");
 const dma            = scripting.addModule("/driverlib/dma.js", {}, false);
 const dma1           = dma.addInstance();
@@ -286,6 +290,17 @@ cputimer2.emulationMode  = "CPUTIMER_EMULATIONMODE_RUNFREE";
 cputimer2.timerPeriod    = 65535;
 cputimer2.timerPrescaler = 100;
 
+dac1.$name            = "DACA_inst";
+dac1.referenceVoltage = "DAC_REF_ADC_VREFHI";
+
+dac2.$name            = "DACB_inst";
+dac2.dacBase          = "DACB_BASE";
+dac2.referenceVoltage = "DAC_REF_ADC_VREFHI";
+
+dac3.$name            = "DACC_inst";
+dac3.dacBase          = "DACC_BASE";
+dac3.referenceVoltage = "DAC_REF_ADC_VREFHI";
+
 const default_warning = scripting.addModule("/driverlib/default_warning.js", {}, false);
 scripting.suppress("Add the \'Device Support\' module in order to use Clock Tree tool and generate device support files\\. This suggestion can be ignored if not using the Clock Tree tool\\.", default_warning);
 
@@ -309,8 +324,8 @@ dma1.destBurstStep          = 1;
 dma1.destWrapSize           = 65536;
 dma1.srcWrapSize            = 65536;
 dma1.destTransferStep       = 1;
-dma1.transferSize           = 65;
 dma1.$name                  = "DMA1_inst";
+dma1.transferSize           = 1024;
 dma1.dmaInt.enableInterrupt = true;
 
 dma2.useInterrupts          = true;
@@ -329,13 +344,13 @@ dma2.destBurstStep          = 1;
 dma2.destWrapSize           = 65536;
 dma2.srcWrapSize            = 65536;
 dma2.destTransferStep       = 1;
-dma2.transferSize           = 65;
 dma2.dmaBase                = "DMA_CH2_BASE";
 dma2.triggerSource          = "DMA_TRIGGER_ADCB2";
 dma2.srcAddressVariable     = "ADCB_ResultRegisterPtr";
 dma2.destAddressVariable    = "ADCB_ResultBufferPtr";
 dma2.$name                  = "DMA2_inst";
 dma2.emulationMode          = "DMA_EMULATION_FREE_RUN";
+dma2.transferSize           = 1024;
 dma2.dmaInt.enableInterrupt = true;
 
 dma3.useInterrupts          = true;
@@ -355,12 +370,12 @@ dma3.destBurstStep          = 1;
 dma3.destWrapSize           = 65536;
 dma3.srcWrapSize            = 65536;
 dma3.destTransferStep       = 1;
-dma3.transferSize           = 65;
 dma3.$name                  = "DMA3_inst";
 dma3.dmaBase                = "DMA_CH3_BASE";
 dma3.triggerSource          = "DMA_TRIGGER_ADCC2";
 dma3.srcAddressVariable     = "ADCC_ResultRegisterPtr";
 dma3.destAddressVariable    = "ADCC_ResultBufferPtr";
+dma3.transferSize           = 1024;
 dma3.dmaInt.enableInterrupt = true;
 
 dma4.useInterrupts          = true;
@@ -380,12 +395,12 @@ dma4.destBurstStep          = 1;
 dma4.destWrapSize           = 65536;
 dma4.srcWrapSize            = 65536;
 dma4.destTransferStep       = 1;
-dma4.transferSize           = 65;
 dma4.$name                  = "DMA4_inst";
 dma4.dmaBase                = "DMA_CH4_BASE";
 dma4.triggerSource          = "DMA_TRIGGER_ADCD2";
 dma4.srcAddressVariable     = "ADCD_ResultRegisterPtr";
 dma4.destAddressVariable    = "ADCD_ResultBufferPtr";
+dma4.transferSize           = 1024;
 dma4.dmaInt.enableInterrupt = true;
 
 gpio5.qualMode        = "GPIO_QUAL_3SAMPLE";
