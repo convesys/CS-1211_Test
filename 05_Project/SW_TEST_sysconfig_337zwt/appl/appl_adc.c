@@ -10,6 +10,7 @@
 //
 
 #include <stdint.h>
+#include <math.h>
 #include "board.h"
 #include "mbdata.h"
 #include "appl_adc.h"
@@ -815,15 +816,33 @@ typedef struct
 {
     uint16_t u16Minimum;
     uint16_t u16Maximum;
-
+    uint16_t u16Medium;
+    uint16_t u16Quarter;
+    uint16_t u16TrippleQuarter;
+    uint16_t u16PositiveSineWave;
+    uint16_t u16ZeroCrosses;
+    uint16_t u16ZeroCrossesPositive;
+    uint16_t u16ZeroCrossesNegative;
+    uint16_t u16ZeroCrossFirstIndex;
+    uint16_t u16ZeroCrossLastFullSineIndex;
+    uint32_t u32MinimumAcc;
+    uint32_t u32MaximumAcc;
+    uint16_t u16Offset;
+    uint16_t u16RMS;
 }sAdcSineWaveMeasure_t;
 
 sAdcSineWaveMeasure_t sAdcSineWaveMeasure[4][6];
 
+
 void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
 {
+    uint64_t RMSAcc;
     uint16_t index;
     uint16_t value;
+    uint32_t valuemult;
+    //int16_t value16int;
+    int32_t value32int;
+    uint16_t filter;
     sAdcSineWaveMeasure_t *psAdcSineWaveMeasure = &sAdcSineWaveMeasure[adcIndex][adcSOC];
     uint16_t *pData;
 
@@ -843,6 +862,11 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
         break;
     }
 
+    /* zero RMS and Offset outputs in case of following measurement failure */
+    psAdcSineWaveMeasure->u16Offset = 0;
+    psAdcSineWaveMeasure->u16RMS = 0;
+
+
     /* find min and max */
     psAdcSineWaveMeasure->u16Minimum = 0xFFFF;
     psAdcSineWaveMeasure->u16Maximum = 0;
@@ -858,6 +882,131 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
             psAdcSineWaveMeasure->u16Maximum = value;
         }
     }
+    /* calculate half amplitude */
+    value = (psAdcSineWaveMeasure->u16Maximum  - psAdcSineWaveMeasure->u16Minimum) >> 1;
+
+    /* calculate middle value (primary offset) */
+    psAdcSineWaveMeasure->u16Medium = psAdcSineWaveMeasure->u16Minimum + value;
+
+    value >>= 1;
+
+    /* calculate 1/4 */
+    psAdcSineWaveMeasure->u16Quarter = psAdcSineWaveMeasure->u16Medium - value;
+
+    /* calculate 3/4 */
+    psAdcSineWaveMeasure->u16TrippleQuarter = psAdcSineWaveMeasure->u16Medium + value;
+
+    /* init with positive sign or not */
+    index = 0;
+    psAdcSineWaveMeasure->u16PositiveSineWave = pData[index] > psAdcSineWaveMeasure->u16Medium;
+
+    /* find first sine wave zero-cross */
+    for( ; index < APPL_ADC_RESULTS_BUFFER_SIZE; index++)
+    {
+        value = pData[index] > psAdcSineWaveMeasure->u16Medium;
+        if (psAdcSineWaveMeasure->u16PositiveSineWave > value)
+        {
+            break;
+        }
+        else
+        if (psAdcSineWaveMeasure->u16PositiveSineWave < value)
+        {
+            break;
+        }
+    }
+
+    /* sine wave zero-cross init and start finding all extremums */
+    psAdcSineWaveMeasure->u16ZeroCrossFirstIndex = index;
+    psAdcSineWaveMeasure->u16ZeroCrossLastFullSineIndex = 0;
+    psAdcSineWaveMeasure->u16ZeroCrosses = 0;
+    psAdcSineWaveMeasure->u16ZeroCrossesPositive = 0;
+    psAdcSineWaveMeasure->u16ZeroCrossesNegative = 0;
+    psAdcSineWaveMeasure->u16Minimum = 0xFFFF;
+    psAdcSineWaveMeasure->u16Maximum = 0;
+    psAdcSineWaveMeasure->u32MinimumAcc = 0;
+    psAdcSineWaveMeasure->u32MaximumAcc = 0;
+    filter = APPL_ADC_FILTER_HALF_SINEWAVE_CHANGE;
+    for( ; index < APPL_ADC_RESULTS_BUFFER_SIZE; index++)
+    {
+        value = pData[index];
+        if (psAdcSineWaveMeasure->u16Minimum > value)
+        {
+            psAdcSineWaveMeasure->u16Minimum = value;
+        }
+        if (psAdcSineWaveMeasure->u16Maximum < value)
+        {
+            psAdcSineWaveMeasure->u16Maximum = value;
+        }
+        value = pData[index] > psAdcSineWaveMeasure->u16Medium;
+        filter--;
+        if(filter)
+        {
+            continue;
+        }
+        if (psAdcSineWaveMeasure->u16PositiveSineWave > value)
+        {
+            psAdcSineWaveMeasure->u32MaximumAcc += psAdcSineWaveMeasure->u16Maximum;
+            psAdcSineWaveMeasure->u16Maximum = 0;
+            psAdcSineWaveMeasure->u16ZeroCrossesPositive++;
+            psAdcSineWaveMeasure->u16ZeroCrosses++;
+            if ((psAdcSineWaveMeasure->u16ZeroCrosses & 1) == 0)
+            {
+                psAdcSineWaveMeasure->u16ZeroCrossLastFullSineIndex = index;
+            }
+            continue;
+        }
+        if (psAdcSineWaveMeasure->u16PositiveSineWave < value)
+        {
+            psAdcSineWaveMeasure->u32MinimumAcc += psAdcSineWaveMeasure->u16Minimum;
+            psAdcSineWaveMeasure->u16Minimum = 0xFFFF;
+            psAdcSineWaveMeasure->u16ZeroCrossesNegative++;
+            psAdcSineWaveMeasure->u16ZeroCrosses++;
+            if ((psAdcSineWaveMeasure->u16ZeroCrosses & 1) == 0)
+            {
+                psAdcSineWaveMeasure->u16ZeroCrossLastFullSineIndex = index;
+            }
+            continue;
+        }
+    }
+
+    /* find average max min for all complete sinewaves */
+    value = psAdcSineWaveMeasure->u16ZeroCrosses >> 1;
+
+    if(value)
+    {
+        /* if valid average extremum values calculated - calc the offset */
+        psAdcSineWaveMeasure->u16Offset = (psAdcSineWaveMeasure->u32MaximumAcc - psAdcSineWaveMeasure->u32MinimumAcc + (value >> 1)) / value;
+
+        RMSAcc = 0;
+
+        /* measure the RMS of a full Sinewave (could be made on a full half sinewave) */
+        for (index = psAdcSineWaveMeasure->u16ZeroCrossFirstIndex; index < psAdcSineWaveMeasure->u16ZeroCrossLastFullSineIndex; index++)
+        {
+            valuemult = pData[index];
+            value32int = valuemult - psAdcSineWaveMeasure->u16Offset;
+            RMSAcc += value32int * value32int;
+        }
+
+        value = psAdcSineWaveMeasure->u16ZeroCrossLastFullSineIndex - psAdcSineWaveMeasure->u16ZeroCrossFirstIndex;
+
+        if (value)
+        {
+            valuemult = (RMSAcc + (value >> 1) ) / value;
+        }
+        else
+        {
+            //should not enter here
+            valuemult = RMSAcc;
+        }
+
+
+
+        psAdcSineWaveMeasure->u16RMS = sqrt(valuemult);
+    }
+
+
+
+
 }
 
 
