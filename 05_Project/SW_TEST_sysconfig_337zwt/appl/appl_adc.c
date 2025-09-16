@@ -139,6 +139,7 @@ uint16_t DMA_StartDelayLoopsConfig = APPL_ADC_START_DMA_DELAYED_ADC_CYCLES;
 
 void APPL_ADC_StopMeasurementDetect(uint16_t adcIndex);
 void APPL_ADC_DelayedDMAStart(uint16_t adcIndex);
+void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC);
 
 //
 // Interrupt Functions
@@ -611,7 +612,18 @@ void APPL_ADC_process(void)
             && (ADC_Measurement_InProgress[3] == 0) )
         {
             ADC_Auto_Measure_Completed = 1;
-        }
+
+            APPL_ADC_SineWaveEvaluate (0, ADC_Channel_Index);
+            APPL_ADC_SineWaveEvaluate (1, ADC_Channel_Index);
+            APPL_ADC_SineWaveEvaluate (2, ADC_Channel_Index);
+            APPL_ADC_SineWaveEvaluate (3, ADC_Channel_Index);
+
+            //take results - for now only the first valid measurement result
+//            ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
+//            ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
+//            ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
+//            ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
+       }
 
         if (ADC_Auto_Measure_Completed)
         {
@@ -621,11 +633,6 @@ void APPL_ADC_process(void)
                 {
                     ADC_Auto_Measure_Request = 0;
                 }
-                //take results - for now only the first valid measurement result
-                ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
-                ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
-                ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
-                ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
 
                 if (ADC_Auto_Measure_Use_Index_Fixed)
                 {
@@ -804,6 +811,54 @@ void APPL_ADC_Fill(void)
     inp_reg_mem[55] = ADCD_Results[ADC_SOC_NUMBER5];
 }
 
+typedef struct
+{
+    uint16_t u16Minimum;
+    uint16_t u16Maximum;
+
+}sAdcSineWaveMeasure_t;
+
+sAdcSineWaveMeasure_t sAdcSineWaveMeasure[4][6];
+
+void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
+{
+    uint16_t index;
+    uint16_t value;
+    sAdcSineWaveMeasure_t *psAdcSineWaveMeasure = &sAdcSineWaveMeasure[adcIndex][adcSOC];
+    uint16_t *pData;
+
+    switch (adcIndex)
+    {
+    case 0:
+        pData = &ADCA_ResultBuffer[0];
+        break;
+    case 1:
+        pData = &ADCB_ResultBuffer[0];
+        break;
+    case 2:
+        pData = &ADCC_ResultBuffer[0];
+        break;
+    case 3:
+        pData = &ADCD_ResultBuffer[0];
+        break;
+    }
+
+    /* find min and max */
+    psAdcSineWaveMeasure->u16Minimum = 0xFFFF;
+    psAdcSineWaveMeasure->u16Maximum = 0;
+    for(index = 0; index < APPL_ADC_RESULTS_BUFFER_SIZE; index++)
+    {
+        value = pData[index];
+        if (psAdcSineWaveMeasure->u16Minimum > value)
+        {
+            psAdcSineWaveMeasure->u16Minimum = value;
+        }
+        if (psAdcSineWaveMeasure->u16Maximum < value)
+        {
+            psAdcSineWaveMeasure->u16Maximum = value;
+        }
+    }
+}
 
 
 
