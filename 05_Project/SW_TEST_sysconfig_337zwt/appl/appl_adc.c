@@ -812,6 +812,24 @@ void APPL_ADC_Fill(void)
     inp_reg_mem[55] = ADCD_Results[ADC_SOC_NUMBER5];
 }
 
+
+#define USE_QUADRANTS_FOR_STATE     1       /* if 0 - used sinewave positive or negative for states */
+
+typedef enum
+{
+    SINE_WAVE_BOTTOM,
+    SINE_WAVE_LOW,
+    SINE_WAVE_HIGH,
+    SINE_WAVE_TOP
+}eAdcSineWaveQuarters;
+
+typedef enum
+{
+    SINE_WAVE_UNKNOWN,
+    SINE_WAVE_RISING,
+    SINE_WAVE_FALLING
+}eAdcSineWaveDirection;
+
 typedef struct
 {
     uint16_t u16Minimum;
@@ -820,6 +838,8 @@ typedef struct
     uint16_t u16Quarter;
     uint16_t u16TrippleQuarter;
     uint16_t u16PositiveSineWave;
+    uint16_t u16QuadrantSineWave;       /* see eAdcSineWaveQuarters */
+    uint16_t u16DirectionSineWave;      /* see eAdcSineWaveDirection */
     uint16_t u16ZeroCrosses;
     uint16_t u16ZeroCrossesPositive;
     uint16_t u16ZeroCrossesNegative;
@@ -833,6 +853,110 @@ typedef struct
 
 sAdcSineWaveMeasure_t sAdcSineWaveMeasure[4][6];
 
+uint16_t u16_UnknownSineWaveQuadrant = 0;
+
+/* returns if state is changed */
+uint16_t APPL_ADC_SineWaveGetNextStateQuarter(sAdcSineWaveMeasure_t *psAdcSineWaveMeasure, uint16_t value)
+{
+    uint16_t result = 0;
+    switch(psAdcSineWaveMeasure->u16QuadrantSineWave)
+    {
+    case SINE_WAVE_BOTTOM:
+        if (value > psAdcSineWaveMeasure->u16Quarter)
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_LOW;
+            //psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_RISING;    already set when entered SINE_WAVE_BOTTOM
+            result = 1;
+        }
+        break;
+    case SINE_WAVE_LOW:
+        if (psAdcSineWaveMeasure->u16DirectionSineWave == SINE_WAVE_RISING)
+        {
+            if (value > psAdcSineWaveMeasure->u16Medium)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_HIGH;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_RISING;
+                result = 1;
+            }
+        }
+        else
+        if (psAdcSineWaveMeasure->u16DirectionSineWave == SINE_WAVE_FALLING)
+        {
+            if (value < psAdcSineWaveMeasure->u16Quarter)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_BOTTOM;
+                //psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+                result = 1;
+            }
+        }
+        else
+        {
+            u16_UnknownSineWaveQuadrant++;
+            if (value < psAdcSineWaveMeasure->u16Quarter)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_BOTTOM;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+                result = 1;
+            }
+            else
+            if (value > psAdcSineWaveMeasure->u16Medium)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_HIGH;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_RISING;
+                result = 1;
+            }
+        }
+        break;
+    case SINE_WAVE_HIGH:
+        if (psAdcSineWaveMeasure->u16DirectionSineWave == SINE_WAVE_RISING)
+        {
+            if (value > psAdcSineWaveMeasure->u16TrippleQuarter)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_TOP;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+                result = 1;
+            }
+        }
+        else
+        if (psAdcSineWaveMeasure->u16DirectionSineWave == SINE_WAVE_FALLING)
+        {
+            if (value < psAdcSineWaveMeasure->u16Medium)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_LOW;
+                //psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+                result = 1;
+            }
+        }
+        else
+        {
+            u16_UnknownSineWaveQuadrant++;
+            if (value < psAdcSineWaveMeasure->u16Medium)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_LOW;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+                result = 1;
+            }
+            else
+            if (value > psAdcSineWaveMeasure->u16TrippleQuarter)
+            {
+                psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_TOP;
+                psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_RISING;
+                result = 1;
+            }
+        }
+        break;
+    case SINE_WAVE_TOP:
+        if (value < psAdcSineWaveMeasure->u16TrippleQuarter)
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_HIGH;
+            //psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;    already set when entered SINE_WAVE_BOTTOM
+            result = 1;
+        }
+        break;
+    }
+    return result;
+}
+
 
 void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
 {
@@ -842,7 +966,11 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
     uint32_t valuemult;
     //int16_t value16int;
     int32_t value32int;
+#if USE_QUADRANTS_FOR_STATE
+#else
+    uint16_t ready;
     uint16_t filter;
+#endif
     sAdcSineWaveMeasure_t *psAdcSineWaveMeasure = &sAdcSineWaveMeasure[adcIndex][adcSOC];
     uint16_t *pData;
 
@@ -899,10 +1027,59 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
     /* init with positive sign or not */
     index = 0;
     psAdcSineWaveMeasure->u16PositiveSineWave = pData[index] > psAdcSineWaveMeasure->u16Medium;
+    if (pData[index] > psAdcSineWaveMeasure->u16Medium)
+    {
+        if (pData[index] > psAdcSineWaveMeasure->u16TrippleQuarter)
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_TOP;
+            psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_FALLING;
+        }
+        else
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_HIGH;
+            psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_UNKNOWN;
+        }
+    }
+    else
+    {
+        if (pData[index] > psAdcSineWaveMeasure->u16Quarter)
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_LOW;
+            psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_UNKNOWN;
+        }
+        else
+        {
+            psAdcSineWaveMeasure->u16QuadrantSineWave = SINE_WAVE_BOTTOM;
+            psAdcSineWaveMeasure->u16DirectionSineWave = SINE_WAVE_RISING;
+        }
+    }
 
     /* find first sine wave zero-cross */
+    //ready = 0;
     for( ; index < APPL_ADC_RESULTS_BUFFER_SIZE; index++)
     {
+#if USE_QUADRANTS_FOR_STATE
+        value = pData[index];
+        if(APPL_ADC_SineWaveGetNextStateQuarter(psAdcSineWaveMeasure, value))
+        {
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_TOP)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_BOTTOM)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_HIGH)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_LOW)
+            {
+                break;
+            }
+        }
+#else
         value = pData[index] > psAdcSineWaveMeasure->u16Medium;
         if (psAdcSineWaveMeasure->u16PositiveSineWave > value)
         {
@@ -913,6 +1090,7 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
         {
             break;
         }
+#endif
     }
 
     /* sine wave zero-cross init and start finding all extremums */
@@ -937,12 +1115,39 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
         {
             psAdcSineWaveMeasure->u16Maximum = value;
         }
+#if USE_QUADRANTS_FOR_STATE
+        value = pData[index];
+        if(APPL_ADC_SineWaveGetNextStateQuarter(psAdcSineWaveMeasure, value))
+        {
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_TOP)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_BOTTOM)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_HIGH)
+            {
+                break;
+            }
+            if(psAdcSineWaveMeasure->u16QuadrantSineWave == SINE_WAVE_LOW)
+            {
+                break;
+            }
+        }
+        else
+        {
+            continue;
+        }
+#else
         value = pData[index] > psAdcSineWaveMeasure->u16Medium;
         filter--;
         if(filter)
         {
             continue;
         }
+#endif
         if (psAdcSineWaveMeasure->u16PositiveSineWave > value)
         {
             psAdcSineWaveMeasure->u32MaximumAcc += psAdcSineWaveMeasure->u16Maximum;
