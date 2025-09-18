@@ -19,7 +19,8 @@
 // Configuration Definitions
 //
 
-#define APPL_ADC_RESULTS_BUFFER_SIZE                    16384    //buffer size for storing conversion results for 1 channel
+#define APPL_ADC_RESULTS_BUFFER_SIZE                    4096    //buffer size for storing conversion results for 1 channel
+#define APPL_ADC_RESULTS_OFFS                           2048
 
 #define APPL_ADC_RESOLUTION                             12
 // 12 for 12-bit conversion resolution, which supports (ADC_MODE_SINGLE_ENDED)
@@ -31,7 +32,7 @@
 
 #define APPL_ADC_FIRST_VALID_SAMPLE_BUFFER_INDEX        4       //first valid sample index in buffer - mostly because small sampling time and if adc continuous conversions not started before dma
 
-#define APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS          15      //15->75ns
+#define APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS          20      //20->100ns
 
 
 #define APPL_ADC_START_DMA_DELAYED_ADC_CYCLES           1

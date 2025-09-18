@@ -76,7 +76,7 @@ void MB_Write_Data(uint16_t *mem, uint16_t addr, uint16_t cnt){
     ui16_Tx1Buff[4] = ui16_Mb1Buff[4];
     ui16_Tx1Buff[5] = ui16_Mb1Buff[5];
     if(0xFF == cnt){
-        GPIO_togglePin(LED1_GPIO);
+        //GPIO_togglePin(LED1_GPIO);
         mem[addr] = ui16_Mb1Buff[4] * 256 + ui16_Mb1Buff[5];
     } else {
         for (i = 0; i < cnt; i++) mem[addr + i] = ui16_Mb1Buff[i*2+7] * 256 +  ui16_Mb1Buff[i*2+8];

@@ -3,7 +3,7 @@
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
  * @cliArgs --device "F2837xD" --part "F2837xD_337ZWT" --package "F2837xD_337ZWT" --context "CPU1" --product "C2000WARE@6.00.00.00"
  * @v2CliArgs --device "TMS320F28379D" --package "337ZWT" --context "CPU1" --product "C2000WARE@6.00.00.00"
- * @versions {"tool":"1.25.0+4268"}
+ * @versions {"tool":"1.24.2+4234"}
  */
 
 /**
@@ -325,7 +325,7 @@ dma1.destWrapSize           = 65536;
 dma1.srcWrapSize            = 65536;
 dma1.destTransferStep       = 1;
 dma1.$name                  = "DMA1_inst";
-dma1.transferSize           = 1024;
+dma1.transferSize           = 256;
 dma1.dmaInt.enableInterrupt = true;
 
 dma2.useInterrupts          = true;
@@ -350,7 +350,7 @@ dma2.srcAddressVariable     = "ADCB_ResultRegisterPtr";
 dma2.destAddressVariable    = "ADCB_ResultBufferPtr";
 dma2.$name                  = "DMA2_inst";
 dma2.emulationMode          = "DMA_EMULATION_FREE_RUN";
-dma2.transferSize           = 1024;
+dma2.transferSize           = 256;
 dma2.dmaInt.enableInterrupt = true;
 
 dma3.useInterrupts          = true;
@@ -375,7 +375,7 @@ dma3.dmaBase                = "DMA_CH3_BASE";
 dma3.triggerSource          = "DMA_TRIGGER_ADCC2";
 dma3.srcAddressVariable     = "ADCC_ResultRegisterPtr";
 dma3.destAddressVariable    = "ADCC_ResultBufferPtr";
-dma3.transferSize           = 1024;
+dma3.transferSize           = 256;
 dma3.dmaInt.enableInterrupt = true;
 
 dma4.useInterrupts          = true;
@@ -400,7 +400,7 @@ dma4.dmaBase                = "DMA_CH4_BASE";
 dma4.triggerSource          = "DMA_TRIGGER_ADCD2";
 dma4.srcAddressVariable     = "ADCD_ResultRegisterPtr";
 dma4.destAddressVariable    = "ADCD_ResultBufferPtr";
-dma4.transferSize           = 1024;
+dma4.transferSize           = 256;
 dma4.dmaInt.enableInterrupt = true;
 
 gpio5.qualMode        = "GPIO_QUAL_3SAMPLE";

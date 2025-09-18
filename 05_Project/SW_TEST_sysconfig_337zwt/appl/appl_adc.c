@@ -44,6 +44,15 @@ uint16_t ADCB_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could
 uint16_t ADCC_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
 uint16_t ADCD_ResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];  //value index 0 could be stale read by dma when ADC prescale Ratio > 2 - take data starting from index 1..16 - read 16 more values to compensate
 
+#pragma DATA_SECTION(ADCA_SGNResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCB_SGNResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCC_SGNResultBuffer, "ramgs0_15");
+#pragma DATA_SECTION(ADCD_SGNResultBuffer, "ramgs0_15");
+int16_t ADCA_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
+int16_t ADCB_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
+int16_t ADCC_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
+int16_t ADCD_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
+
 uint16_t ADCA_Results[16];
 uint16_t ADCB_Results[16];
 uint16_t ADCC_Results[16];
@@ -71,6 +80,8 @@ uint16_t ADC_Channel_Index_Fixed = ADC_SOC_NUMBER0;     /* Corresponds to ADCA_C
 
 uint16_t ADC_Measurement_InProgress[4];
 uint16_t ADC_Measurement_WaitComplete[4];
+
+uint16_t ADC_SAMPLING_TICKS = APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS;
 
 uint16_t ADCA_Channels[16] =
 {
@@ -404,10 +415,11 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
     //
     if(APPL_ADC_RESOLUTION == 12)
     {
-        acqps = 14; // 75ns sampling time (SYSCLK Ticks + 1 - at 200MHz 14 means (14+1)*5ns->75 ns)
-        acqps = 19; // 100ns sampling time (SYSCLK Ticks + 1 - at 200MHz 19 means (19+1)*5ns->100 ns)
-                    // Table 11-12. ADC Timings in 12-bit Mode 44 cycles conversion time - 44 cycles @ 200MHz (adc presacaler 1:4) -> 44*5ns -> 220ns
-        acqps = APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS - 1;
+//        acqps = 14; // 75ns sampling time (SYSCLK Ticks + 1 - at 200MHz 14 means (14+1)*5ns->75 ns)
+//        acqps = 19; // 100ns sampling time (SYSCLK Ticks + 1 - at 200MHz 19 means (19+1)*5ns->100 ns)
+//                    // Table 11-12. ADC Timings in 12-bit Mode 44 cycles conversion time - 44 cycles @ 200MHz (adc presacaler 1:4) -> 44*5ns -> 220ns
+//        acqps = APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS - 1;
+        acqps = ADC_SAMPLING_TICKS - 1;
         //acqps = 63; // 320ns
         //acqps = 127; // 640ns
         //acqps = 255; // 1280ns
@@ -537,6 +549,50 @@ void APPL_ADC_init(void)
     ADC_Auto_Measure_Request = 1;
 }
 
+void APPL_ADCBufs_tosigned(void)
+{
+    uint16_t i;
+    for (i = 0; i < APPL_ADC_RESULTS_BUFFER_SIZE; i++)
+    {
+        ADCA_SGNResultBuffer[i] = ADCA_ResultBuffer[i] - APPL_ADC_RESULTS_OFFS;
+        ADCB_SGNResultBuffer[i] = ADCB_ResultBuffer[i] - APPL_ADC_RESULTS_OFFS;
+        ADCC_SGNResultBuffer[i] = ADCC_ResultBuffer[i] - APPL_ADC_RESULTS_OFFS;
+        ADCD_SGNResultBuffer[i] = ADCD_ResultBuffer[i] - APPL_ADC_RESULTS_OFFS;
+
+    }
+
+}
+
+void APPL_ADCBuf_RMS(uint16_t cycles, int16_t *buf, uint16_t *res)
+{
+    uint16_t i, cnt = 0, cyc = 0, cntp = 0;
+    int32_t val, valp;
+    double d_rms = 0.0;
+    valp = val = buf[1];
+    for (i = 2; i < APPL_ADC_RESULTS_BUFFER_SIZE; i++)
+    {
+        val = buf[i];
+        d_rms += val*val;
+        cnt++;
+        if((val >= 0) && (valp < 0)){
+            if(0 == cyc){
+                d_rms = 0.0;
+                if(cnt > cntp + 10) cyc++;
+                cnt = 0;
+            }
+            if(cnt > cntp + 10) cyc++;
+            cntp = cnt;
+        }
+        if(cyc == cycles + 1) break;
+        valp = val;
+    }
+    d_rms /= cnt;
+    d_rms = sqrt(d_rms);
+    cntp = d_rms;
+    cntp++;
+    *res = cntp;
+}
+
 void APPL_ADC_process(void)
 {
     switch (ADC_Auto_Measure_State)
@@ -613,7 +669,7 @@ void APPL_ADC_process(void)
             && (ADC_Measurement_InProgress[3] == 0) )
         {
             ADC_Auto_Measure_Completed = 1;
-
+#if 0	//lilov rms
             APPL_ADC_SineWaveEvaluate (0, ADC_Channel_Index);
             APPL_ADC_SineWaveEvaluate (1, ADC_Channel_Index);
             APPL_ADC_SineWaveEvaluate (2, ADC_Channel_Index);
@@ -624,6 +680,7 @@ void APPL_ADC_process(void)
 //            ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
 //            ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
 //            ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
+#endif
        }
 
         if (ADC_Auto_Measure_Completed)
@@ -638,12 +695,14 @@ void APPL_ADC_process(void)
                 if (ADC_Auto_Measure_Use_Index_Fixed)
                 {
                     ADC_Channel_Index = ADC_Channel_Index_Fixed;
+                    GPIO_togglePin(LED1_GPIO);
                 }
                 else
                 {
                     ADC_Channel_Index++;
                     if (ADC_Channel_Index >= ADC_ChannelsCount)
                     {
+                        GPIO_togglePin(LED1_GPIO);
                         ADC_Channel_Index = 0;
                     }
                 }
@@ -704,6 +763,14 @@ void APPL_ADC_process(void)
             else
             {
                 ADC_Auto_Measure_State = ADC_STATE_STOPPED;
+//                GPIO_togglePin(LED1_GPIO);
+                GPIO_writePin(LED4_GPIO, 0);
+                APPL_ADCBufs_tosigned();
+                APPL_ADCBuf_RMS(3, ADCA_SGNResultBuffer, &ADCA_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_RMS(3, ADCB_SGNResultBuffer, &ADCB_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_RMS(3, ADCC_SGNResultBuffer, &ADCC_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_RMS(3, ADCD_SGNResultBuffer, &ADCD_Results[ADC_Channel_Index]);
+                GPIO_writePin(LED4_GPIO, 1);
             }
         }
 
@@ -812,6 +879,11 @@ void APPL_ADC_Fill(void)
     inp_reg_mem[55] = ADCD_Results[ADC_SOC_NUMBER5];
 }
 
+
+
+//
+// lilov rms implementation begin (not completed - USE_QUADRANTS_FOR_STATE reached not tested until find first sine wave zero-cross)
+//
 
 #define USE_QUADRANTS_FOR_STATE     1       /* if 0 - used sinewave positive or negative for states */
 
@@ -1103,7 +1175,10 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
     psAdcSineWaveMeasure->u16Maximum = 0;
     psAdcSineWaveMeasure->u32MinimumAcc = 0;
     psAdcSineWaveMeasure->u32MaximumAcc = 0;
+#if USE_QUADRANTS_FOR_STATE
+#else
     filter = APPL_ADC_FILTER_HALF_SINEWAVE_CHANGE;
+#endif
     for( ; index < APPL_ADC_RESULTS_BUFFER_SIZE; index++)
     {
         value = pData[index];
@@ -1208,12 +1283,11 @@ void APPL_ADC_SineWaveEvaluate (uint16_t adcIndex, uint16_t adcSOC)
 
         psAdcSineWaveMeasure->u16RMS = sqrt(valuemult);
     }
-
-
-
-
 }
 
+//
+// lilov rms implementation final
+//
 
 
 #if 0
