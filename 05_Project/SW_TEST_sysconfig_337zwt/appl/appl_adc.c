@@ -53,10 +53,10 @@ int16_t ADCB_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
 int16_t ADCC_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
 int16_t ADCD_SGNResultBuffer[APPL_ADC_RESULTS_BUFFER_SIZE];
 
-uint16_t ADCA_Results[16];
-uint16_t ADCB_Results[16];
-uint16_t ADCC_Results[16];
-uint16_t ADCD_Results[16];
+int16_t ADCA_Results[16];
+int16_t ADCB_Results[16];
+int16_t ADCC_Results[16];
+int16_t ADCD_Results[16];
 
 const void * ADCA_ResultBufferPtr = ADCA_ResultBuffer;
 const void * ADCB_ResultBufferPtr = ADCB_ResultBuffer;
@@ -71,17 +71,15 @@ const void * ADCD_ResultRegisterPtr = (const void *)ADCDRESULT_BASE;
 uint16_t ADC_ChannelsCount = 6;
 uint16_t ADC_Channel_Index = 0;
 eADCState_t ADC_Auto_Measure_State = ADC_STATE_STOPPED;
-uint16_t ADC_Auto_Measure_Request = 0;
-uint16_t ADC_Auto_Measure_Request_Single_Mode = 0;
-uint16_t ADC_Auto_Measure_Completed = 0;
 
-uint16_t ADC_Auto_Measure_Use_Index_Fixed = 0;
 uint16_t ADC_Channel_Index_Fixed = ADC_SOC_NUMBER0;     /* Corresponds to ADCA_Channels[ADC_Channel_Index_Fixed] to be measured */
+ADCControl ADCControl_inst;
 
 uint16_t ADC_Measurement_InProgress[4];
 uint16_t ADC_Measurement_WaitComplete[4];
 
 uint16_t ADC_SAMPLING_TICKS = APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS;
+uint16_t ADC_ENABLE_MB_CONTROL = 1;
 
 uint16_t ADCA_Channels[16] =
 {
@@ -544,9 +542,10 @@ void setupADCContinuous(uint32_t adcBase, uint16_t channel)
 
 void APPL_ADC_init(void)
 {
+
     ADC_Auto_Measure_State = ADC_STATE_STOPPED;
     ADC_Channel_Index = 0;
-    ADC_Auto_Measure_Request = 1;
+    ADCControl_inst.Auto_Measure_Request = 1;
 }
 
 void APPL_ADCBufs_tosigned(void)
@@ -563,161 +562,78 @@ void APPL_ADCBufs_tosigned(void)
 
 }
 
-void APPL_ADCBuf_RMS(uint16_t cycles, int16_t *buf, uint16_t *res)
+void APPL_ADCBuf_AVGorRMS(uint16_t cycles, int16_t *buf, int16_t *res)
 {
     uint16_t i, cnt = 0, cyc = 0, cntp = 0;
-    int32_t val, valp;
+    int32_t val, valp, i_avg = 0;;
     double d_rms = 0.0;
+    int16_t i_res;
+
     valp = val = buf[1];
     for (i = 2; i < APPL_ADC_RESULTS_BUFFER_SIZE; i++)
     {
         val = buf[i];
-        d_rms += val*val;
         cnt++;
-        if((val >= 0) && (valp < 0)){
-            if(0 == cyc){
-                d_rms = 0.0;
+        if(ADCControl_inst.Auto_Calculate_RMS)
+        {
+            d_rms += val*val;
+            if((val >= 0) && (valp < 0)){
+                if(0 == cyc){
+                    d_rms = 0.0;
+                    if(cnt > cntp + 10) cyc++;
+                    cnt = 0;
+                }
                 if(cnt > cntp + 10) cyc++;
-                cnt = 0;
+                cntp = cnt;
             }
-            if(cnt > cntp + 10) cyc++;
-            cntp = cnt;
+            if(cyc == cycles + 1) break;
+            valp = val;
+        } else {
+            i_avg += val;
         }
-        if(cyc == cycles + 1) break;
-        valp = val;
     }
-    d_rms /= cnt;
-    d_rms = sqrt(d_rms);
-    cntp = d_rms;
-    cntp++;
-    *res = cntp;
+    if(ADCControl_inst.Auto_Calculate_RMS)
+    {
+        d_rms /= cnt;
+        d_rms = sqrt(d_rms);
+        i_res = d_rms;
+    } else {
+        i_avg /= cnt;
+        i_res = i_avg;
+    }
+    *res = i_res;
 }
 
 void APPL_ADC_process(void)
 {
+    if(ADC_ENABLE_MB_CONTROL){
+        if((0x4000 & ADC_REG_REQUEST) == 0x4000)ADCControl_inst.Auto_Use_Fixed_Index = 1; else ADCControl_inst.Auto_Use_Fixed_Index = 0;
+        if((0x2000 & ADC_REG_REQUEST) == 0x2000)ADCControl_inst.Auto_Calculate_RMS = 1; else ADCControl_inst.Auto_Calculate_RMS = 0;
+        if(ADCControl_inst.Auto_Use_Fixed_Index)ADC_Channel_Index_Fixed = ADC_REG_FIXED_CHAN;
+        if(((0x0001 & ADC_REG_REQUEST) == 0x0000) && ((0x0001 & ADC_REG_CONFIRM) == 0x0001))ADCControl_inst.Auto_Measure_Request = 1;
+        ADC_REG_CONFIRM = ADC_REG_REQUEST;
+    }
     switch (ADC_Auto_Measure_State)
     {
-    case ADC_STATE_STOPPED:
-    {
-        if (ADC_Auto_Measure_Request)
+        case ADC_STATE_STOPPED:
         {
-            if (ADC_Auto_Measure_Request_Single_Mode)
+            if (ADCControl_inst.Auto_Measure_Request)
             {
-                ADC_Auto_Measure_Request = 0;
-            }
-
-            if (ADC_Auto_Measure_Use_Index_Fixed)
-            {
-                ADC_Channel_Index = ADC_Channel_Index_Fixed;
-            }
-            else
-            {
-                ADC_Channel_Index = 0;
-            }
-
-            setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
-            setupADCContinuous(ADCD_BASE, ADCD_Channels[ADC_Channel_Index]);
-            ADC_Auto_Measure_State = ADC_STATE_RUNNING;
-            ADC_Measurement_WaitComplete[0] = 0;
-            ADC_Measurement_WaitComplete[1] = 0;
-            ADC_Measurement_WaitComplete[2] = 0;
-            ADC_Measurement_WaitComplete[3] = 0;
-            ADC_Measurement_InProgress[0] = 1;
-            ADC_Measurement_InProgress[1] = 1;
-            ADC_Measurement_InProgress[2] = 1;
-            ADC_Measurement_InProgress[3] = 1;
-            ADC_Auto_Measure_Completed = 0;
-
-            DMA_StartDelayLoops[0] = DMA_StartDelayLoopsConfig;
-            DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
-            DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
-            DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
-            if (DMA_StartDelayLoops[0] == 0)
-            {
-                DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
-                DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers
-                DMA_clearTriggerFlag(DMA3_inst_BASE);   //clear previous ADC triggers
-                DMA_clearTriggerFlag(DMA4_inst_BASE);   //clear previous ADC triggers
-//                DMA_enableTrigger(DMA1_inst_BASE);
-//                DMA_enableTrigger(DMA2_inst_BASE);
-//                DMA_enableTrigger(DMA3_inst_BASE);
-//                DMA_enableTrigger(DMA4_inst_BASE);
-                DMA_startChannel(DMA1_inst_BASE);
-                DMA_startChannel(DMA2_inst_BASE);
-                DMA_startChannel(DMA3_inst_BASE);
-                DMA_startChannel(DMA4_inst_BASE);
-            }
-
-            APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            APPL_ADC_timer_start_adc[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
-            ADC_forceSOC(ADCA_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCB_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCC_BASE, ADC_SOC_NUMBER0);
-            ADC_forceSOC(ADCD_BASE, ADC_SOC_NUMBER0);
-        }
-        break;
-    }
-    case ADC_STATE_RUNNING:
-    {
-        if (   (ADC_Measurement_InProgress[0] == 0)
-            && (ADC_Measurement_InProgress[1] == 0)
-            && (ADC_Measurement_InProgress[2] == 0)
-            && (ADC_Measurement_InProgress[3] == 0) )
-        {
-            ADC_Auto_Measure_Completed = 1;
-#if 0	//lilov rms
-            APPL_ADC_SineWaveEvaluate (0, ADC_Channel_Index);
-            APPL_ADC_SineWaveEvaluate (1, ADC_Channel_Index);
-            APPL_ADC_SineWaveEvaluate (2, ADC_Channel_Index);
-            APPL_ADC_SineWaveEvaluate (3, ADC_Channel_Index);
-
-            //take results - for now only the first valid measurement result
-//            ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
-//            ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
-//            ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
-//            ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
-#endif
-       }
-
-        if (ADC_Auto_Measure_Completed)
-        {
-            if (ADC_Auto_Measure_Request)
-            {
-                if (ADC_Auto_Measure_Request_Single_Mode)
-                {
-                    ADC_Auto_Measure_Request = 0;
-                }
-
-                if (ADC_Auto_Measure_Use_Index_Fixed)
+                if (ADCControl_inst.Auto_Use_Fixed_Index)
                 {
                     ADC_Channel_Index = ADC_Channel_Index_Fixed;
-                    GPIO_togglePin(LED1_GPIO);
+                    ADCControl_inst.Auto_Measure_Request = 0;
                 }
                 else
                 {
-                    ADC_Channel_Index++;
-                    if (ADC_Channel_Index >= ADC_ChannelsCount)
-                    {
-                        GPIO_togglePin(LED1_GPIO);
-                        ADC_Channel_Index = 0;
-                    }
+                    ADC_Channel_Index = 0;
                 }
+
                 setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
                 setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
                 setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
                 setupADCContinuous(ADCD_BASE, ADCD_Channels[ADC_Channel_Index]);
-
-                //re-enable trigger ADC_SOC_NUMBER0 with ADCINT2 for continuous adc mode if not used setupADCContinuous
-    //            ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-    //            ADC_setInterruptSOCTrigger(ADCB_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-    //            ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-    //            ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
-
-                //ADC_Auto_Measure_State = ADC_STATE_RUNNING;
+                ADC_Auto_Measure_State = ADC_STATE_RUNNING;
                 ADC_Measurement_WaitComplete[0] = 0;
                 ADC_Measurement_WaitComplete[1] = 0;
                 ADC_Measurement_WaitComplete[2] = 0;
@@ -726,8 +642,7 @@ void APPL_ADC_process(void)
                 ADC_Measurement_InProgress[1] = 1;
                 ADC_Measurement_InProgress[2] = 1;
                 ADC_Measurement_InProgress[3] = 1;
-                ADC_Auto_Measure_Completed = 0;
-
+                ADCControl_inst.Auto_Measure_Completed = 0;
 
                 DMA_StartDelayLoops[0] = DMA_StartDelayLoopsConfig;
                 DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
@@ -749,8 +664,6 @@ void APPL_ADC_process(void)
                     DMA_startChannel(DMA4_inst_BASE);
                 }
 
-
-
                 APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
                 APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
                 APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
@@ -760,22 +673,124 @@ void APPL_ADC_process(void)
                 ADC_forceSOC(ADCC_BASE, ADC_SOC_NUMBER0);
                 ADC_forceSOC(ADCD_BASE, ADC_SOC_NUMBER0);
             }
-            else
+            break;
+        }
+        case ADC_STATE_RUNNING:
+        {
+            if (   (ADC_Measurement_InProgress[0] == 0)
+                && (ADC_Measurement_InProgress[1] == 0)
+                && (ADC_Measurement_InProgress[2] == 0)
+                && (ADC_Measurement_InProgress[3] == 0) )
             {
-                ADC_Auto_Measure_State = ADC_STATE_STOPPED;
-//                GPIO_togglePin(LED1_GPIO);
+                ADCControl_inst.Auto_Measure_Completed = 1;
                 GPIO_writePin(LED4_GPIO, 0);
                 APPL_ADCBufs_tosigned();
-                APPL_ADCBuf_RMS(3, ADCA_SGNResultBuffer, &ADCA_Results[ADC_Channel_Index]);
-                APPL_ADCBuf_RMS(3, ADCB_SGNResultBuffer, &ADCB_Results[ADC_Channel_Index]);
-                APPL_ADCBuf_RMS(3, ADCC_SGNResultBuffer, &ADCC_Results[ADC_Channel_Index]);
-                APPL_ADCBuf_RMS(3, ADCD_SGNResultBuffer, &ADCD_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_AVGorRMS(3, ADCA_SGNResultBuffer, &ADCA_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_AVGorRMS(3, ADCB_SGNResultBuffer, &ADCB_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_AVGorRMS(3, ADCC_SGNResultBuffer, &ADCC_Results[ADC_Channel_Index]);
+                APPL_ADCBuf_AVGorRMS(3, ADCD_SGNResultBuffer, &ADCD_Results[ADC_Channel_Index]);
                 GPIO_writePin(LED4_GPIO, 1);
-            }
-        }
+    #if 0	//lilov rms
+                APPL_ADC_SineWaveEvaluate (0, ADC_Channel_Index);
+                APPL_ADC_SineWaveEvaluate (1, ADC_Channel_Index);
+                APPL_ADC_SineWaveEvaluate (2, ADC_Channel_Index);
+                APPL_ADC_SineWaveEvaluate (3, ADC_Channel_Index);
 
-        break;
-    }
+                //take results - for now only the first valid measurement result
+    //            ADCA_Results[ADC_Channel_Index] = ADCA_ResultBuffer[1];
+    //            ADCB_Results[ADC_Channel_Index] = ADCB_ResultBuffer[1];
+    //            ADCC_Results[ADC_Channel_Index] = ADCC_ResultBuffer[1];
+    //            ADCD_Results[ADC_Channel_Index] = ADCD_ResultBuffer[1];
+    #endif
+           }
+
+            if (ADCControl_inst.Auto_Measure_Completed)
+            {
+                if (ADCControl_inst.Auto_Measure_Request)
+                {
+                    if (ADCControl_inst.Auto_Use_Fixed_Index)
+                    {
+                        ADC_Channel_Index = ADC_Channel_Index_Fixed;
+                        GPIO_togglePin(LED1_GPIO);
+                        ADCControl_inst.Auto_Measure_Request = 0;
+                        ADC_Auto_Measure_State = ADC_STATE_STOPPED;
+                        break;
+                    }
+                    else
+                    {
+                        ADC_Channel_Index++;
+                        if (ADC_Channel_Index >= ADC_ChannelsCount)
+                        {
+                            GPIO_togglePin(LED1_GPIO);
+                            ADC_Channel_Index = 0;
+                            ADCControl_inst.Auto_Measure_Request = 0;
+                            ADC_Auto_Measure_State = ADC_STATE_STOPPED;
+                            break;
+                        }
+                    }
+                    setupADCContinuous(ADCA_BASE, ADCA_Channels[ADC_Channel_Index]);
+                    setupADCContinuous(ADCB_BASE, ADCB_Channels[ADC_Channel_Index]);
+                    setupADCContinuous(ADCC_BASE, ADCC_Channels[ADC_Channel_Index]);
+                    setupADCContinuous(ADCD_BASE, ADCD_Channels[ADC_Channel_Index]);
+
+                    //re-enable trigger ADC_SOC_NUMBER0 with ADCINT2 for continuous adc mode if not used setupADCContinuous
+        //            ADC_setInterruptSOCTrigger(ADCA_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+        //            ADC_setInterruptSOCTrigger(ADCB_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+        //            ADC_setInterruptSOCTrigger(ADCC_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+        //            ADC_setInterruptSOCTrigger(ADCD_BASE, ADC_SOC_NUMBER0, ADC_INT_SOC_TRIGGER_ADCINT2);
+
+                    //ADC_Auto_Measure_State = ADC_STATE_RUNNING;
+                    ADC_Measurement_WaitComplete[0] = 0;
+                    ADC_Measurement_WaitComplete[1] = 0;
+                    ADC_Measurement_WaitComplete[2] = 0;
+                    ADC_Measurement_WaitComplete[3] = 0;
+                    ADC_Measurement_InProgress[0] = 1;
+                    ADC_Measurement_InProgress[1] = 1;
+                    ADC_Measurement_InProgress[2] = 1;
+                    ADC_Measurement_InProgress[3] = 1;
+                    ADCControl_inst.Auto_Measure_Completed = 0;
+
+
+                    DMA_StartDelayLoops[0] = DMA_StartDelayLoopsConfig;
+                    DMA_StartDelayLoops[1] = DMA_StartDelayLoopsConfig;
+                    DMA_StartDelayLoops[2] = DMA_StartDelayLoopsConfig;
+                    DMA_StartDelayLoops[3] = DMA_StartDelayLoopsConfig;
+                    if (DMA_StartDelayLoops[0] == 0)
+                    {
+                        DMA_clearTriggerFlag(DMA1_inst_BASE);   //clear previous ADC triggers
+                        DMA_clearTriggerFlag(DMA2_inst_BASE);   //clear previous ADC triggers
+                        DMA_clearTriggerFlag(DMA3_inst_BASE);   //clear previous ADC triggers
+                        DMA_clearTriggerFlag(DMA4_inst_BASE);   //clear previous ADC triggers
+        //                DMA_enableTrigger(DMA1_inst_BASE);
+        //                DMA_enableTrigger(DMA2_inst_BASE);
+        //                DMA_enableTrigger(DMA3_inst_BASE);
+        //                DMA_enableTrigger(DMA4_inst_BASE);
+                        DMA_startChannel(DMA1_inst_BASE);
+                        DMA_startChannel(DMA2_inst_BASE);
+                        DMA_startChannel(DMA3_inst_BASE);
+                        DMA_startChannel(DMA4_inst_BASE);
+                    }
+
+
+
+                    APPL_ADC_timer_start_adc[0] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                    APPL_ADC_timer_start_adc[1] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                    APPL_ADC_timer_start_adc[2] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                    APPL_ADC_timer_start_adc[3] = CPUTimer_getTimerCount(CPUTIMER1_BASE);
+                    ADC_forceSOC(ADCA_BASE, ADC_SOC_NUMBER0);
+                    ADC_forceSOC(ADCB_BASE, ADC_SOC_NUMBER0);
+                    ADC_forceSOC(ADCC_BASE, ADC_SOC_NUMBER0);
+                    ADC_forceSOC(ADCD_BASE, ADC_SOC_NUMBER0);
+                }
+                else
+                {
+                    ADC_Auto_Measure_State = ADC_STATE_STOPPED;
+    //                GPIO_togglePin(LED1_GPIO);
+                }
+            }
+
+            break;
+        }
     }
 
 }

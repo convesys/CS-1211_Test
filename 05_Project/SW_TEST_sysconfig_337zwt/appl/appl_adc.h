@@ -30,6 +30,7 @@
 // common mode voltage requirements; see the device data manual)
 
 
+
 #define APPL_ADC_FIRST_VALID_SAMPLE_BUFFER_INDEX        4       //first valid sample index in buffer - mostly because small sampling time and if adc continuous conversions not started before dma
 
 #define APPL_ADC_CHANNEL_SAMPLING_SYSCLK_TICKS          20      //20->100ns
@@ -38,6 +39,23 @@
 #define APPL_ADC_START_DMA_DELAYED_ADC_CYCLES           1
 
 #define APPL_ADC_FILTER_HALF_SINEWAVE_CHANGE            16
+
+//
+// Types definition
+//
+typedef  union
+{
+    struct {
+        uint16_t Auto_Measure_Request   :1;
+        uint16_t Auto_Measure_Completed :1;
+        uint16_t Auto_Use_Fixed_Index   :1;
+        uint16_t Auto_Calculate_RMS     :1;
+        uint16_t reserved               :12;
+    };
+    uint16_t ui16;
+} ADCControl;
+
+extern ADCControl ADCControl_inst;
 
 //
 // Variable External Usage

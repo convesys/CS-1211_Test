@@ -109,11 +109,12 @@ void MB_Main(void){
 
                 switch(ui16_Mb1Buff[1]){
                     case 0x03:
-//                        if(!MB_CheckAddr_Cnt(&addr, HR_START_ADDR, HR_END_ADDR, &cnt))MB_Read_Data(hold_reg_mem, addr, cnt);
-                        if(!MB_CheckAddr_Cnt(&addr, IR_START_ADDR, IR_END_ADDR, &cnt))MB_Read_Data(inp_reg_mem, addr, cnt);
+                        if(!MB_CheckAddr_Cnt(&addr, HR_START_ADDR, HR_END_ADDR, &cnt))MB_Read_Data(hold_reg_mem, addr, cnt);
+//                        if(!MB_CheckAddr_Cnt(&addr, IR_START_ADDR, IR_END_ADDR, &cnt))MB_Read_Data(inp_reg_mem, addr, cnt);
                         break;
                     case 0x04:
-                        if(!MB_CheckAddr_Cnt(&addr, IR_START_ADDR, IR_END_ADDR, &cnt))MB_Read_Data(inp_reg_mem, addr, cnt);
+                        if(!MB_CheckAddr_Cnt(&addr, HR_START_ADDR, HR_END_ADDR, &cnt))MB_Read_Data(hold_reg_mem, addr, cnt);
+//                        if(!MB_CheckAddr_Cnt(&addr, IR_START_ADDR, IR_END_ADDR, &cnt))MB_Read_Data(inp_reg_mem, addr, cnt);
                         break;
                     case 0x06:
                         if(!MB_CheckAddr(&addr, HR_START_ADDR, HR_END_ADDR, 1)){

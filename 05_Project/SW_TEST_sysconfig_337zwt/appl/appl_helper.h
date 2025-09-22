@@ -11,6 +11,8 @@
 #include <stdint.h>
 
 uint16_t APPL_HELPER_hex_str(uint16_t val);
+uint16_t APPL_HELPER_bcd2bin(uint16_t val);
+uint16_t APPL_HELPER_bin2bcd(uint16_t val);
 
 
 #endif /* APPL_APPL_HELPER_H_ */

@@ -133,8 +133,14 @@ const gpio101        = gpio.addInstance();
 const gpio102        = gpio.addInstance();
 const gpio103        = gpio.addInstance();
 const gpio104        = gpio.addInstance();
+const gpio105        = gpio.addInstance();
+const gpio106        = gpio.addInstance();
+const gpio107        = gpio.addInstance();
 const sci            = scripting.addModule("/driverlib/sci.js", {}, false);
 const sci1           = sci.addInstance();
+const spi            = scripting.addModule("/driverlib/spi.js", {}, false);
+const spi1           = spi.addInstance();
+const spi2           = spi.addInstance();
 const sysctl         = scripting.addModule("/driverlib/sysctl.js");
 
 /**
@@ -799,9 +805,33 @@ gpio103.qualMode        = "GPIO_QUAL_3SAMPLE";
 gpio103.$name           = "inst_GPIO168";
 gpio103.gpioPin.$assign = "GPIO168";
 
-gpio104.qualMode        = "GPIO_QUAL_3SAMPLE";
-gpio104.$name           = "inst_GPIO72";
-gpio104.gpioPin.$assign = "GPIO72";
+gpio104.qualMode                      = "GPIO_QUAL_3SAMPLE";
+gpio104.$name                         = "inst_GPIO72";
+gpio104.writeInitialValue             = true;
+gpio104.initialValue                  = 1;
+gpio104.direction                     = "GPIO_DIR_MODE_OUT";
+gpio104.gpioPin.$assignAllowConflicts = "GPIO72";
+
+gpio105.$name                         = "inst_GPIO61";
+gpio105.direction                     = "GPIO_DIR_MODE_OUT";
+gpio105.qualMode                      = "GPIO_QUAL_3SAMPLE";
+gpio105.writeInitialValue             = true;
+gpio105.initialValue                  = 1;
+gpio105.gpioPin.$assignAllowConflicts = "GPIO61";
+
+gpio106.$name             = "I2CA_SCL";
+gpio106.padConfig         = "OD_PULLUP";
+gpio106.writeInitialValue = true;
+gpio106.initialValue      = 1;
+gpio106.direction         = "GPIO_DIR_MODE_OUT";
+gpio106.gpioPin.$assign   = "GPIO1";
+
+gpio107.$name             = "I2CA_SDA";
+gpio107.direction         = "GPIO_DIR_MODE_OUT";
+gpio107.padConfig         = "OD_PULLUP";
+gpio107.writeInitialValue = true;
+gpio107.initialValue      = 1;
+gpio107.gpioPin.$assign   = "GPIO0";
 
 sci1.selectRegisteredInterrupts = ["registerRxInt","registerTxInt"];
 sci1.enabledInterrupts          = ["SCI_INT_RXRDY_BRKDT","SCI_INT_TXRDY"];
@@ -821,5 +851,53 @@ sci1.txQual.padConfig           = "STD";
 sci1.sciRXInt.enableInterrupt   = true;
 sci1.sciTXInt.enableInterrupt   = true;
 
+spi1.emulationMode                        = "SPI_EMULATION_STOP_AFTER_TRANSMIT";
+spi1.mode                                 = "SPI_MODE_CONTROLLER";
+spi1.useFifo                              = false;
+spi1.useInterrupts                        = false;
+spi1.dataWidth                            = "8";
+spi1.$name                                = "SPIA_inst";
+spi1.bitRate                              = 2000000;
+spi1.transferProtocol                     = "SPI_PROT_POL0PHA1";
+spi1.spi.$assign                          = "SPIA";
+spi1.spi.spi_picoPin.$assign              = "GPIO58";
+spi1.spi.spi_pociPin.$assign              = "GPIO59";
+spi1.spi.spi_clkPin.$assign               = "GPIO60";
+spi1.spi.spi_ptePin.$assignAllowConflicts = "GPIO61";
+spi1.picoQual.$name                       = "myGPIOQUAL2";
+spi1.picoQual.qualMode                    = "GPIO_QUAL_SYNC";
+spi1.pociQual.$name                       = "myGPIOQUAL3";
+spi1.pociQual.qualMode                    = "GPIO_QUAL_SYNC";
+spi1.clkQual.$name                        = "myGPIOQUAL4";
+spi1.clkQual.qualMode                     = "GPIO_QUAL_SYNC";
+spi1.pteQual.$name                        = "myGPIOQUAL5";
+
+spi2.$name                                = "SPIC_inst";
+spi2.mode                                 = "SPI_MODE_CONTROLLER";
+spi2.emulationMode                        = "SPI_EMULATION_STOP_AFTER_TRANSMIT";
+spi2.useFifo                              = false;
+spi2.useInterrupts                        = false;
+spi2.dataWidth                            = "8";
+spi2.transferProtocol                     = "SPI_PROT_POL0PHA1";
+spi2.bitRate                              = 2000000;
+spi2.spi.spi_picoPin.$assign              = "GPIO69";
+spi2.spi.spi_pociPin.$assign              = "GPIO70";
+spi2.spi.spi_clkPin.$assign               = "GPIO71";
+spi2.spi.spi_ptePin.$assignAllowConflicts = "GPIO72";
+spi2.picoQual.$name                       = "myGPIOQUAL6";
+spi2.picoQual.qualMode                    = "GPIO_QUAL_SYNC";
+spi2.pociQual.$name                       = "myGPIOQUAL7";
+spi2.pociQual.qualMode                    = "GPIO_QUAL_SYNC";
+spi2.clkQual.$name                        = "myGPIOQUAL8";
+spi2.clkQual.qualMode                     = "GPIO_QUAL_SYNC";
+spi2.pteQual.$name                        = "myGPIOQUAL9";
+
 sysctl.enableNMIGlobalInterrupt = true;
 sysctl.splitCode                = true;
+
+/**
+ * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
+ * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
+ * re-solve from scratch.
+ */
+spi2.spi.$suggestSolution = "SPIC";

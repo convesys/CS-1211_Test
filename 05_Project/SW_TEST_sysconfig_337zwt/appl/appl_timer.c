@@ -10,6 +10,7 @@
 #include "mbprot.h"
 #include "appl_debug.h"
 #include "appl_timer.h"
+#include "appl_i2ca.h"
 
 uint16_t ui16_tmr0_cntr;
 
@@ -22,6 +23,7 @@ __interrupt void INT_CPUTIMER0_inst_ISR(void)
     MB_Check_Tmr();
     APPL_TIMER_200ms_Generation();
     Interrupt_clearACKGroup(INT_CPUTIMER0_inst_INTERRUPT_ACK_GROUP);
+    if(i2ca_timeout)i2ca_timeout--;
 }
 
 //
